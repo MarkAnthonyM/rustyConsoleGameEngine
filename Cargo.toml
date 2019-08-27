@@ -5,3 +5,6 @@ authors = ["Mark Anthony <markanthonymartinez9@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["processenv", "wincon"] }

@@ -1,3 +1,12 @@
+use std;
+
+use winapi::shared::minwindef::BOOL;
+use winapi::um::processenv::GetStdHandle;
+use winapi::um::wincon::SetConsoleWindowInfo;
+use winapi::um::wincontypes::SMALL_RECT;
+use winapi::um::winnt::HANDLE;
+use winapi::shared::minwindef::DWORD;
+
 //need to test this struct. may have to use winapi version
 struct SmallRect {
     left: u32,
@@ -7,17 +16,17 @@ struct SmallRect {
 }
 
 struct Coord {
-    screen_width: u32,
-    screen_height: u32,
+    screen_width: i16,
+    screen_height: i16,
 }
 
 struct OlcConsoleGameEngine {
-    screen_width: u32,
-    screen_height: u32,
+    screen_width: i16,
+    screen_height: i16,
 
     // Test holder types for now. Adjust with correct types
-    console_handle_out: String,
-    console_handle_in: String,
+    console_handle: HANDLE,
+    console_handle_in: HANDLE,
 
     mouse_pos_x: u32,
     mouse_pos_y: u32,
@@ -29,8 +38,8 @@ struct OlcConsoleGameEngine {
 
 impl OlcConsoleGameEngine {
     fn new() -> OlcConsoleGameEngine {
-        let output_handle = "this is a test";
-        let input_handle = "this is a test";
+        let output_handle = unsafe{ GetStdHandle("STD_OUTPUT_HANDLE".as_ptr() as DWORD) };
+        let input_handle = unsafe{ GetStdHandle("STD_INPUT_HANDLE".as_ptr() as DWORD) };
         let mouse_x = 0;
         let mouse_y = 0;
         let application_name = "default";
@@ -38,8 +47,8 @@ impl OlcConsoleGameEngine {
         OlcConsoleGameEngine {
             screen_width: 80,
             screen_height: 80,
-            console_handle_out: output_handle.to_string(),
-            console_handle_in: input_handle.to_string(),
+            console_handle: output_handle,
+            console_handle_in: input_handle,
             mouse_pos_x: mouse_x,
             mouse_pos_y: mouse_y,
             enable_sound: true,
@@ -47,20 +56,20 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn _consturct_console(&mut self, width: u32, height: u32, _font_w: u32, _font_h: u32) {
+    fn _consturct_console(&mut self, width: i16, height: i16, _font_w: u32, _font_h: u32) {
         self.screen_width = width;
         self.screen_height = height;
 
         //implement smallRect struct
-        let rect_window = SmallRect {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0,
+        let rect_window = SMALL_RECT {
+            Left: 0,
+            Top: 0,
+            Right: 1,
+            Bottom: 1,
         };
 
         // Set window info using winapi. Will be a Result type.
-        self.set_console_window_info().unwrap();
+        self.set_console_window_info(rect_window).unwrap();
 
         let coord = Coord {
             screen_width: self.screen_width,
@@ -91,14 +100,14 @@ impl OlcConsoleGameEngine {
         // self.varify_allowed_window_size().unwrap();
 
         // Todo: Implement logic to set physical window size
-        let rect_window = SmallRect {
-            left: 0,
-            top: 0,
-            right: self.screen_width - 1,
-            bottom: self.screen_height - 1,
+        let rect_window = SMALL_RECT {
+            Left: 0,
+            Top: 0,
+            Right: self.screen_width - 1,
+            Bottom: self.screen_height - 1,
         };
 
-        self.set_console_window_info().unwrap();
+        self.set_console_window_info(rect_window).unwrap();
 
         // Todo: Implement flag logic for mouse imput
         // self.set_console_mode().unwrap();
@@ -124,13 +133,15 @@ impl OlcConsoleGameEngine {
         unimplemented!()
     }
 
-    fn set_console_window_info(&self) -> Result<String, String> {
-        unimplemented!()
-    }
-}
+    fn set_console_window_info(&self, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
+        let window_info = unsafe { SetConsoleWindowInfo(self.console_handle, true as BOOL, &rect_struct) };
 
-fn main() {
-    let new_console = OlcConsoleGameEngine::new();
+        if window_info != 0 {
+            return Ok(window_info)
+        } else {
+            return Err("The function failed")
+        }
+    }
 }
 
 #[cfg(test)]
