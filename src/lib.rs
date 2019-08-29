@@ -1,22 +1,55 @@
 use winapi::shared::minwindef::TRUE;
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::{ SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer };
+use winapi::um::wincon::{ SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
 use winapi::um::wincontypes::{ SMALL_RECT, COORD };
-use winapi::um::winnt::HANDLE;
+use winapi::um::winnt::{ HANDLE, WCHAR };
 
-//This struct is most likely unneeded
-struct SmallRect {
-    left: u32,
-    top: u32,
-    right: u32,
-    bottom: u32,
+//Initialize empty struct
+trait Empty {
+    fn empty() -> Self;
 }
 
-//This struct is most likely unneeded
-struct Coord {
-    x: i16,
-    y: i16,
+impl Empty for COORD {
+    fn empty() -> COORD {
+        COORD { X: 0, Y: 0 }
+    }
+}
+
+impl Empty for CONSOLE_FONT_INFOEX {
+    fn empty() -> CONSOLE_FONT_INFOEX {
+        CONSOLE_FONT_INFOEX {
+            cbSize: 0,
+            nFont: 0,
+            dwFontSize: COORD::empty(),
+            FontFamily: 0,
+            FontWeight: 0,
+            FaceName: [0 as WCHAR; 32],
+        }
+    }
+}
+
+impl Empty for CONSOLE_SCREEN_BUFFER_INFO {
+    fn empty() -> CONSOLE_SCREEN_BUFFER_INFO {
+        CONSOLE_SCREEN_BUFFER_INFO {
+            dwSize: COORD::empty(),
+            dwCursorPosition: COORD::empty(),
+            wAttributes: 0,
+            srWindow: SMALL_RECT::empty(),
+            dwMaximumWindowSize: COORD::empty(),
+        }
+    }
+}
+
+impl Empty for SMALL_RECT {
+    fn empty() -> SMALL_RECT {
+        SMALL_RECT {
+            Top: 0,
+            Right: 0,
+            Bottom: 0,
+            Left: 0,
+        }
+    }
 }
 
 struct OlcConsoleGameEngine {
