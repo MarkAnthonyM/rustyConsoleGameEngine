@@ -1,12 +1,11 @@
 use std;
 
-use winapi::shared::minwindef::BOOL;
+use winapi::shared::minwindef::TRUE;
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
 use winapi::um::wincon::SetConsoleWindowInfo;
 use winapi::um::wincontypes::SMALL_RECT;
 use winapi::um::winnt::HANDLE;
-use winapi::shared::minwindef::DWORD;
 
 //need to test this struct. may have to use winapi version
 struct SmallRect {
@@ -135,7 +134,7 @@ impl OlcConsoleGameEngine {
     }
 
     fn set_console_window_info(&self, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
-        let window_info = unsafe { SetConsoleWindowInfo(self.console_handle, true as BOOL, &rect_struct) };
+        let window_info = unsafe { SetConsoleWindowInfo(self.console_handle, TRUE, &rect_struct) };
 
         if window_info != 0 {
             return Ok(window_info)
