@@ -2,6 +2,7 @@ use std;
 
 use winapi::shared::minwindef::BOOL;
 use winapi::um::processenv::GetStdHandle;
+use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
 use winapi::um::wincon::SetConsoleWindowInfo;
 use winapi::um::wincontypes::SMALL_RECT;
 use winapi::um::winnt::HANDLE;
@@ -38,8 +39,8 @@ struct OlcConsoleGameEngine {
 
 impl OlcConsoleGameEngine {
     fn new() -> OlcConsoleGameEngine {
-        let output_handle = unsafe{ GetStdHandle("STD_OUTPUT_HANDLE".as_ptr() as DWORD) };
-        let input_handle = unsafe{ GetStdHandle("STD_INPUT_HANDLE".as_ptr() as DWORD) };
+        let output_handle = unsafe{ GetStdHandle(STD_OUTPUT_HANDLE) };
+        let input_handle = unsafe{ GetStdHandle(STD_INPUT_HANDLE) };
         let mouse_x = 0;
         let mouse_y = 0;
         let application_name = "default";
