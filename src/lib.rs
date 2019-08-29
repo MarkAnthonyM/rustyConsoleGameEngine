@@ -1,13 +1,11 @@
-use std;
-
 use winapi::shared::minwindef::TRUE;
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::SetConsoleWindowInfo;
-use winapi::um::wincontypes::SMALL_RECT;
+use winapi::um::wincon::{ SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer };
+use winapi::um::wincontypes::{ SMALL_RECT, COORD };
 use winapi::um::winnt::HANDLE;
 
-//need to test this struct. may have to use winapi version
+//This struct is most likely unneeded
 struct SmallRect {
     left: u32,
     top: u32,
@@ -15,9 +13,10 @@ struct SmallRect {
     bottom: u32,
 }
 
+//This struct is most likely unneeded
 struct Coord {
-    screen_width: i16,
-    screen_height: i16,
+    x: i16,
+    y: i16,
 }
 
 struct OlcConsoleGameEngine {
@@ -71,16 +70,16 @@ impl OlcConsoleGameEngine {
         // Set window info using winapi. Will be a Result type.
         self.set_console_window_info(rect_window).unwrap();
 
-        let coord = Coord {
-            screen_width: self.screen_width,
-            screen_height: self.screen_height,
+        let coord = COORD {
+            X: self.screen_width,
+            Y: self.screen_height,
         };
 
         // Set the size of screen buffer. Will be a result type.
-        self.set_console_screen_buffer_size().unwrap();
+        self.set_console_screen_buffer_size(self.console_handle, coord).unwrap();
 
         // Assign screen buffer to console. Will be a result type.
-        self.set_console_active_screen_buffer().unwrap();
+        self.set_console_active_screen_buffer(self.console_handle).unwrap();
 
         // Todo: Implement font struct
         // let some_font_data = SomeFontStruct {
@@ -125,12 +124,24 @@ impl OlcConsoleGameEngine {
 
     }
 
-    fn set_console_active_screen_buffer(&self) -> Result<String, String> {
-        unimplemented!()
+    fn set_console_active_screen_buffer(&self, console_handle: HANDLE) -> Result<i32, &'static str> {
+        let active_buffer = unsafe { SetConsoleActiveScreenBuffer(console_handle) };
+
+        if active_buffer != 0 {
+            return Ok(active_buffer)
+        } else {
+            return Err("Set console active screen buffer failed")
+        }
     }
 
-    fn set_console_screen_buffer_size(&self) -> Result<String, String> {
-        unimplemented!()
+    fn set_console_screen_buffer_size(&self, console_handle: HANDLE, size: COORD) -> Result<i32, &'static str> {
+        let set_size = unsafe { SetConsoleScreenBufferSize(console_handle, size) };
+
+        if set_size != 0 {
+            return Ok(set_size)
+        } else {
+            return Err("Set console screen buffer size function failed")
+        }
     }
 
     fn set_console_window_info(&self, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
@@ -139,7 +150,7 @@ impl OlcConsoleGameEngine {
         if window_info != 0 {
             return Ok(window_info)
         } else {
-            return Err("The function failed")
+            return Err("Set console window info function failed")
         }
     }
 }
