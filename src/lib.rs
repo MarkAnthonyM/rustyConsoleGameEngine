@@ -1,8 +1,11 @@
-use winapi::shared::minwindef::TRUE;
+use std::convert::TryInto;
+
+use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::{ SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
+use winapi::um::wincon::{ SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
 use winapi::um::wincontypes::{ SMALL_RECT, COORD };
+use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
 use winapi::um::winnt::{ HANDLE, WCHAR };
 
 //Initialize empty struct
@@ -88,7 +91,7 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn _consturct_console(&mut self, width: i16, height: i16, _font_w: u32, _font_h: u32) {
+    fn _consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
         self.screen_width = width;
         self.screen_height = height;
 
@@ -114,13 +117,17 @@ impl OlcConsoleGameEngine {
         // Assign screen buffer to console. Will be a result type.
         self.set_console_active_screen_buffer(self.console_handle).unwrap();
 
-        // Todo: Implement font struct
-        // let some_font_data = SomeFontStruct {
-        //     // Font struct logic here
-        // };
+        // set font size and settings
+        let mut font_cfi = CONSOLE_FONT_INFOEX::empty();
+        font_cfi.nFont = 0;
+        font_cfi.dwFontSize.X = font_w;
+        font_cfi.dwFontSize.Y = font_h;
+        font_cfi.FontFamily = FF_DONTCARE;
+        font_cfi.FontWeight = FW_NORMAL.try_into().unwrap();
+
 
         // Todo: Implement font console setting function. Make result type.
-        // self.set_current_console_font_ex().unwrap();
+        self.set_current_console_font_ex(self.console_handle, FALSE, &mut font_cfi).unwrap();
 
         // Todo: Implement console screen buffer struct
         // let some_screen_buffer_info = SomeBufferInfoStruct {
@@ -178,12 +185,23 @@ impl OlcConsoleGameEngine {
     }
 
     fn set_console_window_info(&self, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
+        // Fix this
         let window_info = unsafe { SetConsoleWindowInfo(self.console_handle, TRUE, &rect_struct) };
 
         if window_info != 0 {
             return Ok(window_info)
         } else {
             return Err("Set console window info function failed")
+        }
+    }
+
+    fn set_current_console_font_ex(&self, console_handle: HANDLE, max_window: BOOL, font_struct: &mut CONSOLE_FONT_INFOEX) -> Result<i32, &'static str> {
+        let set_font = unsafe { SetCurrentConsoleFontEx(console_handle, max_window, font_struct) };
+
+        if set_font != 0 {
+            return Ok(set_font)
+        } else {
+            return Err("Set current console font function failed")
         }
     }
 }
