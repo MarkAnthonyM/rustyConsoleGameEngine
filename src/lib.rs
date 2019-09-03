@@ -104,7 +104,7 @@ impl OlcConsoleGameEngine {
         };
 
         // Set window info using winapi. Will be a Result type.
-        self.set_console_window_info(rect_window).unwrap();
+        self.set_console_window_info(self.console_handle, TRUE, rect_window).unwrap();
 
         let coord = COORD {
             X: self.screen_width,
@@ -146,7 +146,7 @@ impl OlcConsoleGameEngine {
             Bottom: self.screen_height - 1,
         };
 
-        self.set_console_window_info(rect_window).unwrap();
+        self.set_console_window_info(self.console_handle, TRUE, rect_window).unwrap();
 
         // Todo: Implement flag logic for mouse imput
         // self.set_console_mode().unwrap();
@@ -184,9 +184,8 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn set_console_window_info(&self, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
-        // Fix this
-        let window_info = unsafe { SetConsoleWindowInfo(self.console_handle, TRUE, &rect_struct) };
+    fn set_console_window_info(&self, console_handle: HANDLE, absolute: BOOL, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
+        let window_info = unsafe { SetConsoleWindowInfo(console_handle, absolute, &rect_struct) };
 
         if window_info != 0 {
             return Ok(window_info)
