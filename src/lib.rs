@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 
+use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
@@ -92,6 +93,8 @@ impl OlcConsoleGameEngine {
     }
 
     fn _consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
+        // Implement console handle error check
+
         self.screen_width = width;
         self.screen_height = height;
 
@@ -140,7 +143,7 @@ impl OlcConsoleGameEngine {
         // Check for valid window size
         self.validate_window_size(&screen_buffer_csbi).unwrap();
 
-        // Todo: Implement logic to set physical window size
+        // Set physical console window size
         let rect_window = SMALL_RECT {
             Left: 0,
             Top: 0,
@@ -154,7 +157,8 @@ impl OlcConsoleGameEngine {
         // self.set_console_mode().unwrap();
 
         // Todo: Implement screen buffer logic
-        // let mut window_buffer: Vec<ctypes::wchar_t> = vec!['*' as u16; buff_width * buff_height];
+        let mut window_buffer: Vec<wchar_t> = vec!['*' as u16; (self.screen_width * self.screen_height).try_into().unwrap()];
+        // May not need these pointers to buffer
         // let buffer_ptr = window_buffer.as_ptr();
         // let buff_sec_ptr = window_buffer.as_mut_ptr();
 
@@ -162,9 +166,10 @@ impl OlcConsoleGameEngine {
         // self.set_console_ctrl_handler(handler_routine, bool);
     }
 
-    fn _enable_sound() {
-
-    }
+    //Todo: Implement sound
+    // fn _enable_sound() {
+    //
+    // }
 
     fn get_console_screen_buffer_info(&self, console_handle: HANDLE, buffer_struct: &mut CONSOLE_SCREEN_BUFFER_INFO) -> Result<i32, &'static str> {
         let screen_buffer_info = unsafe { GetConsoleScreenBufferInfo(console_handle, buffer_struct) };
