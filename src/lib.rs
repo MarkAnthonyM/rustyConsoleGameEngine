@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::{ SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
+use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
 use winapi::um::wincontypes::{ SMALL_RECT, COORD };
 use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
 use winapi::um::winnt::{ HANDLE, WCHAR };
@@ -126,16 +126,16 @@ impl OlcConsoleGameEngine {
         font_cfi.FontWeight = FW_NORMAL.try_into().unwrap();
 
 
-        // Todo: Implement font console setting function. Make result type.
+        // Set extended information about current console font
         self.set_current_console_font_ex(self.console_handle, FALSE, &mut font_cfi).unwrap();
 
-        // Todo: Implement console screen buffer struct
-        // let some_screen_buffer_info = SomeBufferInfoStruct {
-        //     // screen buffer info here
-        // };
+        //Todo: Implement wcscpy_s() function
 
-        // Todo: Implement error checking logic for allowed window sizes.
-        // self.get_console_screen_buffer_info().unwrap();
+        // Todo: Implement console screen buffer struct
+        let mut screen_buffer_csbi = CONSOLE_SCREEN_BUFFER_INFO::empty();
+
+        // Retrive information about supplied console handle
+        self.get_console_screen_buffer_info(self.console_handle, &mut screen_buffer_csbi).unwrap();
         // self.varify_allowed_window_size().unwrap();
 
         // Todo: Implement logic to set physical window size
@@ -164,13 +164,23 @@ impl OlcConsoleGameEngine {
 
     }
 
+    fn get_console_screen_buffer_info(&self, console_handle: HANDLE, buffer_struct: &mut CONSOLE_SCREEN_BUFFER_INFO) -> Result<i32, &'static str> {
+        let screen_buffer_info = unsafe { GetConsoleScreenBufferInfo(console_handle, buffer_struct) };
+
+        if screen_buffer_info != 0 {
+            return Ok(screen_buffer_info)
+        } else {
+            return Err("Get console active screen buffer function failed")
+        }
+    }
+
     fn set_console_active_screen_buffer(&self, console_handle: HANDLE) -> Result<i32, &'static str> {
         let active_buffer = unsafe { SetConsoleActiveScreenBuffer(console_handle) };
 
         if active_buffer != 0 {
             return Ok(active_buffer)
         } else {
-            return Err("Set console active screen buffer failed")
+            return Err("Set console active screen buffer function failed")
         }
     }
 
