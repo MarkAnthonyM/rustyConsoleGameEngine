@@ -136,7 +136,9 @@ impl OlcConsoleGameEngine {
 
         // Retrive information about supplied console handle
         self.get_console_screen_buffer_info(self.console_handle, &mut screen_buffer_csbi).unwrap();
-        // self.varify_allowed_window_size().unwrap();
+
+        // Check for valid window size
+        self.validate_window_size(&screen_buffer_csbi).unwrap();
 
         // Todo: Implement logic to set physical window size
         let rect_window = SMALL_RECT {
@@ -211,6 +213,16 @@ impl OlcConsoleGameEngine {
             return Ok(set_font)
         } else {
             return Err("Set current console font function failed")
+        }
+    }
+
+    fn validate_window_size(&self, buffer_struct: &CONSOLE_SCREEN_BUFFER_INFO) -> Result<&'static str, &'static str> {
+        if self.screen_height > buffer_struct.dwMaximumWindowSize.Y {
+            return Err("Screen height or Font height is too big")
+        } else if self.screen_width > buffer_struct.dwMaximumWindowSize.X {
+            return Err("Screen width or Font Width is too big")
+        } else {
+            Ok("Window size validation successful")
         }
     }
 }
