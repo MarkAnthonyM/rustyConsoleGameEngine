@@ -5,13 +5,30 @@ use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
 use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
-use winapi::um::wincontypes::{ SMALL_RECT, COORD };
+use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, SMALL_RECT };
 use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
 use winapi::um::winnt::{ HANDLE, WCHAR };
 
 //Initialize empty struct
 trait Empty {
     fn empty() -> Self;
+}
+
+impl Empty for CHAR_INFO {
+    fn empty() -> CHAR_INFO {
+        CHAR_INFO {
+            Char: CHAR_INFO_Char::empty(),
+            Attributes: 0,
+        }
+    }
+}
+
+impl Empty for CHAR_INFO_Char {
+    fn empty() -> CHAR_INFO_Char {
+        CHAR_INFO_Char {
+            0: [1],
+        }
+    }
 }
 
 impl Empty for COORD {
@@ -157,7 +174,8 @@ impl OlcConsoleGameEngine {
         // self.set_console_mode().unwrap();
 
         // Todo: Implement screen buffer logic
-        let mut window_buffer: Vec<wchar_t> = vec!['*' as u16; (self.screen_width * self.screen_height).try_into().unwrap()];
+        // let mut window_buffer: Vec<wchar_t> = vec!['*' as u16; (self.screen_width * self.screen_height).try_into().unwrap()];
+        let mut window_buffer: Vec<SMALL_RECT> = vec![SMALL_RECT::empty(); (self.screen_width * self.screen_height).try_into().unwrap()];
         // May not need these pointers to buffer
         // let buffer_ptr = window_buffer.as_ptr();
         // let buff_sec_ptr = window_buffer.as_mut_ptr();
