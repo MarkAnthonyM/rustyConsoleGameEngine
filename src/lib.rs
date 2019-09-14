@@ -14,22 +14,22 @@ trait Empty {
     fn empty() -> Self;
 }
 
-impl Empty for CHAR_INFO {
-    fn empty() -> CHAR_INFO {
-        CHAR_INFO {
-            Char: CHAR_INFO_Char::empty(),
-            Attributes: 0,
-        }
-    }
-}
-
-impl Empty for CHAR_INFO_Char {
-    fn empty() -> CHAR_INFO_Char {
-        CHAR_INFO_Char {
-            0: [1],
-        }
-    }
-}
+// impl Empty for CHAR_INFO {
+//     fn empty() -> CHAR_INFO {
+//         CHAR_INFO {
+//             Char: CHAR_INFO_Char { 0: [0; 1]},
+//             Attributes: 0,
+//         }
+//     }
+// }
+//
+// impl Empty for CHAR_INFO_Char {
+//     fn empty() -> CHAR_INFO_Char {
+//         CHAR_INFO_Char {
+//             0: [1],
+//         }
+//     }
+// }
 
 impl Empty for COORD {
     fn empty() -> COORD {
