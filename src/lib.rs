@@ -8,7 +8,7 @@ use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
 use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
 use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, SMALL_RECT };
 use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
-use winapi::um::winnt::{ HANDLE, WCHAR };
+use winapi::um::winnt::{ HANDLE, WCHAR, SHORT };
 
 //Initialize empty struct
 trait Empty {
@@ -88,6 +88,8 @@ struct OlcConsoleGameEngine {
     enable_sound: bool,
 
     app_name: String,
+
+    text_buffer: Vec<CHAR_INFO>,
 }
 
 impl OlcConsoleGameEngine {
@@ -97,6 +99,7 @@ impl OlcConsoleGameEngine {
         let mouse_x = 0;
         let mouse_y = 0;
         let application_name = "default";
+        let window_buffer: Vec<CHAR_INFO> = Vec::new();
 
         OlcConsoleGameEngine {
             screen_width: 80,
@@ -107,6 +110,7 @@ impl OlcConsoleGameEngine {
             mouse_pos_y: mouse_y,
             enable_sound: true,
             app_name: application_name.to_string(),
+            text_buffer: window_buffer,
         }
     }
 
@@ -176,7 +180,7 @@ impl OlcConsoleGameEngine {
 
         // Todo: Implement screen buffer logic
         // let mut window_buffer: Vec<wchar_t> = vec!['*' as u16; (self.screen_width * self.screen_height).try_into().unwrap()];
-        let mut window_buffer: Vec<CHAR_INFO> = vec![CHAR_INFO::empty(); (self.screen_width * self.screen_height).try_into().unwrap()];
+        self.text_buffer = vec![CHAR_INFO::empty(); (self.screen_width * self.screen_height).try_into().unwrap()];
         // May not need these pointers to buffer
         // let buffer_ptr = window_buffer.as_ptr();
         // let buff_sec_ptr = window_buffer.as_mut_ptr();
