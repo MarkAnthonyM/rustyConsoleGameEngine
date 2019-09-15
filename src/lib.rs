@@ -1,4 +1,5 @@
 use std::convert::TryInto;
+use std::mem::zeroed;
 
 use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
@@ -14,22 +15,22 @@ trait Empty {
     fn empty() -> Self;
 }
 
-// impl Empty for CHAR_INFO {
-//     fn empty() -> CHAR_INFO {
-//         CHAR_INFO {
-//             Char: CHAR_INFO_Char { 0: [0; 1]},
-//             Attributes: 0,
-//         }
-//     }
-// }
-//
-// impl Empty for CHAR_INFO_Char {
-//     fn empty() -> CHAR_INFO_Char {
-//         CHAR_INFO_Char {
-//             0: [1],
-//         }
-//     }
-// }
+impl Empty for CHAR_INFO {
+    fn empty() -> CHAR_INFO {
+        CHAR_INFO {
+            Char: CHAR_INFO_Char::empty(),
+            Attributes: 0,
+        }
+    }
+}
+
+impl Empty for CHAR_INFO_Char {
+    fn empty() -> CHAR_INFO_Char {
+        let mut char_struct_char: CHAR_INFO_Char = unsafe { zeroed() };
+
+        char_struct_char
+    }
+}
 
 impl Empty for COORD {
     fn empty() -> COORD {
@@ -175,7 +176,7 @@ impl OlcConsoleGameEngine {
 
         // Todo: Implement screen buffer logic
         // let mut window_buffer: Vec<wchar_t> = vec!['*' as u16; (self.screen_width * self.screen_height).try_into().unwrap()];
-        let mut window_buffer: Vec<SMALL_RECT> = vec![SMALL_RECT::empty(); (self.screen_width * self.screen_height).try_into().unwrap()];
+        let mut window_buffer: Vec<CHAR_INFO> = vec![CHAR_INFO::empty(); (self.screen_width * self.screen_height).try_into().unwrap()];
         // May not need these pointers to buffer
         // let buffer_ptr = window_buffer.as_ptr();
         // let buff_sec_ptr = window_buffer.as_mut_ptr();
