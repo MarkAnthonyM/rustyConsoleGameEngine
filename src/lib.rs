@@ -265,6 +265,19 @@ impl OlcConsoleGameEngine {
             }
         }
     }
+
+    fn game_thread(&self) {
+        // Todo: Implement Result returning function
+        self.validate_user_create().unwrap();
+
+        // Todo: Implement sound system enable check
+
+        // Todo: Implement time delta logic
+
+        // Todo: Implement main game loop
+
+        // Todo: Implement free resources functions
+    }
 }
 
 #[cfg(test)]
