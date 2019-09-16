@@ -253,6 +253,18 @@ impl OlcConsoleGameEngine {
             Ok("Window size validation successful")
         }
     }
+
+    fn draw(mut self, x: i16, y: i16, c: SHORT, col: SHORT) {
+        if x >= 0 && x < self.screen_width && y >= 0 && y < self.screen_height {
+            unsafe {
+                let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
+                *chr.UnicodeChar_mut() = c.try_into().unwrap();
+
+                self.text_buffer[y as usize * self.screen_width as usize + x as usize].Char = chr;
+                self.text_buffer[y as usize * self.screen_width as usize + x as usize].Attributes = col.try_into().unwrap();
+            }
+        }
+    }
 }
 
 #[cfg(test)]
