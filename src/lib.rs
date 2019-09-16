@@ -1,5 +1,6 @@
 use std::convert::TryInto;
 use std::mem::zeroed;
+use std::time:: { Instant };
 
 use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
@@ -267,14 +268,21 @@ impl OlcConsoleGameEngine {
     }
 
     fn game_thread(&self) {
-        // Todo: Implement Result returning function
+        // Validate successful on_user_create function call
         self.validate_user_create().unwrap();
 
         // Todo: Implement sound system enable check
 
-        // Todo: Implement time delta logic
+        // Time deltas for smooth fps
+        let mut tp_1 = Instant::now();
+        let mut tp_2 = Instant::now();
 
         // Todo: Implement main game loop
+        // Time delta calulations for smooth frame speed
+        tp_2 = Instant::now();
+        let mut elapsed_time = tp_2.duration_since(tp_1);
+        let in_nano = elapsed_time.as_micros() as f64 / 100_000.0;
+        tp_1 = tp_2;
 
         // Todo: Implement free resources functions
     }
