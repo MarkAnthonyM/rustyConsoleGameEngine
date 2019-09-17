@@ -6,10 +6,13 @@ use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
-use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, SMALL_RECT };
+use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, SetConsoleTitleW, WriteConsoleOutputW, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
+use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, PSMALL_RECT, SMALL_RECT };
 use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
-use winapi::um::winnt::{ HANDLE, WCHAR, SHORT };
+use winapi::um::winnt::{ HANDLE, WCHAR, SHORT, LPCWSTR };
+use winapi::um::winuser::wsprintfW;
+
+use widestring::U16CString;
 
 //Initialize empty struct
 trait Empty {
@@ -76,41 +79,48 @@ impl Empty for SMALL_RECT {
 }
 
 struct OlcConsoleGameEngine {
-    screen_width: i16,
-    screen_height: i16,
+    app_name: String,
 
-    // Test holder types for now. Adjust with correct types
     console_handle: HANDLE,
     console_handle_in: HANDLE,
+
+    enable_sound: bool,
+
+    loop_state: bool,
 
     mouse_pos_x: u32,
     mouse_pos_y: u32,
 
-    enable_sound: bool,
+    rect_window: SMALL_RECT,
 
-    app_name: String,
+    screen_width: i16,
+    screen_height: i16,
 
     text_buffer: Vec<CHAR_INFO>,
 }
 
 impl OlcConsoleGameEngine {
     fn new() -> OlcConsoleGameEngine {
-        let output_handle = unsafe{ GetStdHandle(STD_OUTPUT_HANDLE) };
-        let input_handle = unsafe{ GetStdHandle(STD_INPUT_HANDLE) };
+        let application_name = "default";
+        let loop_state = true;
         let mouse_x = 0;
         let mouse_y = 0;
-        let application_name = "default";
+        let output_handle = unsafe{ GetStdHandle(STD_OUTPUT_HANDLE) };
+        let input_handle = unsafe{ GetStdHandle(STD_INPUT_HANDLE) };
+        let rect_window = SMALL_RECT::empty();
         let window_buffer: Vec<CHAR_INFO> = Vec::new();
 
         OlcConsoleGameEngine {
-            screen_width: 80,
-            screen_height: 80,
+            app_name: application_name.to_string(),
             console_handle: output_handle,
             console_handle_in: input_handle,
+            enable_sound: true,
+            loop_state: loop_state,
             mouse_pos_x: mouse_x,
             mouse_pos_y: mouse_y,
-            enable_sound: true,
-            app_name: application_name.to_string(),
+            rect_window: rect_window,
+            screen_width: 80,
+            screen_height: 80,
             text_buffer: window_buffer,
         }
     }
@@ -121,8 +131,8 @@ impl OlcConsoleGameEngine {
         self.screen_width = width;
         self.screen_height = height;
 
-        //implement smallRect struct
-        let rect_window = SMALL_RECT {
+        //Set initial rect_window field
+        self.rect_window = SMALL_RECT {
             Left: 0,
             Top: 0,
             Right: 1,
@@ -130,7 +140,7 @@ impl OlcConsoleGameEngine {
         };
 
         // Set window info using winapi. Will be a Result type.
-        self.set_console_window_info(self.console_handle, TRUE, rect_window).unwrap();
+        self.set_console_window_info(self.console_handle, TRUE, self.rect_window).unwrap();
 
         let coord = COORD {
             X: self.screen_width,
@@ -225,6 +235,16 @@ impl OlcConsoleGameEngine {
         }
     }
 
+    fn set_console_title(&self, console_title: LPCWSTR) -> Result<i32, &'static str> {
+        let title_string = unsafe { SetConsoleTitleW(console_title) };
+
+        if title_string != 0 {
+            return Ok(title_string)
+        } else {
+            return Err("Set console title function failed")
+        }
+    }
+
     fn set_console_window_info(&self, console_handle: HANDLE, absolute: BOOL, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
         let window_info = unsafe { SetConsoleWindowInfo(console_handle, absolute, &rect_struct) };
 
@@ -255,6 +275,16 @@ impl OlcConsoleGameEngine {
         }
     }
 
+    fn write_console_output(&self, console_handle: HANDLE, buffer: *const CHAR_INFO, buffer_size: COORD, buffer_coord: COORD, write_region: PSMALL_RECT) -> Result<i32, &'static str> {
+        let buffer_output = unsafe { WriteConsoleOutputW(console_handle, buffer, buffer_size, buffer_coord, write_region) };
+
+        if buffer_output != 0 {
+            return Ok(buffer_output)
+        } else {
+            return Err("Write console output function failed")
+        }
+    }
+
     fn draw(mut self, x: i16, y: i16, c: SHORT, col: SHORT) {
         if x >= 0 && x < self.screen_width && y >= 0 && y < self.screen_height {
             unsafe {
@@ -273,16 +303,38 @@ impl OlcConsoleGameEngine {
 
         // Todo: Implement sound system enable check
 
+        // Window Title buffer
+        let s: [wchar_t; 256];
+        let s_ptr = s.as_mut_ptr();
+
+        // Console title information
+        let w_char = format!("OneLoneCoder.com - Console Game Engine - {}", self.app_name);
+        let w_string = U16CString::from_str(w_char).unwrap();
+        let w_ptr = w_string.as_ptr();
+
         // Time deltas for smooth fps
         let mut tp_1 = Instant::now();
         let mut tp_2 = Instant::now();
 
-        // Todo: Implement main game loop
-        // Time delta calulations for smooth frame speed
-        tp_2 = Instant::now();
-        let mut elapsed_time = tp_2.duration_since(tp_1);
-        let in_nano = elapsed_time.as_micros() as f64 / 100_000.0;
-        tp_1 = tp_2;
+        // Main game loop
+        while self.loop_state {
+            while self.loop_state {
+                // Time delta calulations for smooth frame speed
+                tp_2 = Instant::now();
+                let mut elapsed_time = tp_2.duration_since(tp_1);
+                let in_nano = elapsed_time.as_micros() as f64 / 100_000.0;
+                tp_1 = tp_2;
+
+                // Todo: Implement input handle logic
+
+                // Todo: Implement user update function
+
+                // Sets title and pushes frame to buffer
+                wsprintfW(s_ptr, w_ptr);
+                self.set_console_title(s.as_ptr());
+                self.write_console_output(self.console_handle, self.text_buffer.as_ptr(), COORD {X: self.screen_width, Y: self.screen_height}, COORD { X:0, Y:0 }, &mut self.rect_window);
+            }
+        }
 
         // Todo: Implement free resources functions
     }
