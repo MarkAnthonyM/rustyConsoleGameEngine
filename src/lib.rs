@@ -1,6 +1,8 @@
 use std::convert::TryInto;
 use std::mem::zeroed;
-use std::time:: { Instant };
+use std::time:: { Duration, Instant };
+
+use rand::prelude::*;
 
 use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
@@ -285,7 +287,7 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn draw(mut self, x: i16, y: i16, c: SHORT, col: SHORT) {
+    fn draw(&mut self, x: i16, y: i16, c: SHORT, col: SHORT) {
         if x >= 0 && x < self.screen_width && y >= 0 && y < self.screen_height {
             unsafe {
                 let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
@@ -328,8 +330,9 @@ impl OlcConsoleGameEngine {
                 // Todo: Implement input handle logic
 
                 // Todo: Implement user update function
+                self.on_user_update(elapsed_time);
 
-                // Sets title and pushes frame to buffer
+                // Update title and push frame to buffer
                 unsafe {
                     let mut rect = self.rect_window;
                     let rect_ptr = &mut rect;
@@ -349,7 +352,14 @@ impl OlcConsoleGameEngine {
         true
     }
 
-    fn on_user_update(&self) -> bool {
+    fn on_user_update(&mut self, time_delta: Duration) -> bool {
+        for x in 0..self.screen_width {
+            for y in 0..self.screen_height {
+                let ran_num = rand::random::<i16>();
+                self.draw(x, y, '#' as SHORT, ran_num);
+            }
+        }
+
         true
     }
 }
