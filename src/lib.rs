@@ -299,24 +299,24 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn draw(&mut self, x: i16, y: i16, c: SHORT, col: SHORT) {
-        if x >= 0 && x < self.screen_width && y >= 0 && y < self.screen_height {
-            unsafe {
-                let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
-                *chr.UnicodeChar_mut() = c.try_into().unwrap();
-
-                self.text_buffer[y as usize * self.screen_width as usize + x as usize].Char = chr;
-                self.text_buffer[y as usize * self.screen_width as usize + x as usize].Attributes = col.try_into().unwrap();
-            }
-        }
-    }
-
     fn clip(&self, x: &mut i16, y: &mut i16) {
         // Todo: Replace with pattern match expression
         if *x < 0 { *x = 0; }
         if *x >= self.screen_width { *x = self.screen_width; }
         if *y < 0 { *y = 0; }
         if *y >= self.screen_height { *y = self.screen_height; }
+    }
+
+    fn draw(&mut self, x: usize, y: usize, c: SHORT, col: SHORT) {
+        if x >= 0 && x < self.screen_width.try_into().unwrap() && y >= 0 && y < self.screen_height.try_into().unwrap() {
+            unsafe {
+                let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
+                *chr.UnicodeChar_mut() = c.try_into().unwrap();
+
+                self.text_buffer[y * self.screen_width as usize + x].Char = chr;
+                self.text_buffer[y * self.screen_width as usize + x].Attributes = col.try_into().unwrap();
+            }
+        }
     }
 
     pub fn game_thread(&mut self) {
@@ -378,8 +378,8 @@ impl OlcConsoleGameEngine {
     }
 
     fn on_user_update(&mut self, time_delta: Duration) -> bool {
-        for x in 0..self.screen_width {
-            for y in 0..self.screen_height {
+        for x in 0..self.screen_width as usize {
+            for y in 0..self.screen_height as usize {
                 let ran_num = random::<u16>();
                 let conv = ran_num % 16;
                 self.draw(x, y, '#' as SHORT, conv.try_into().unwrap());
