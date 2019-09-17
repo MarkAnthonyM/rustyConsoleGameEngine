@@ -9,4 +9,4 @@ rand = "0.7.2"
 widestring = "0.4.0"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["processenv", "wincon", "winbase", "winuser"] }
+winapi = { version = "0.3", features = ["handleapi", "processenv", "wincon", "winbase", "winuser"] }

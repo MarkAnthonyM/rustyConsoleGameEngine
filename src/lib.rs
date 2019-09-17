@@ -1,17 +1,18 @@
 use std::convert::TryInto;
-use std::mem::zeroed;
+use std::mem::{ size_of, zeroed };
 use std::time:: { Duration, Instant };
 
 use rand::prelude::*;
 
 use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
+use winapi::um::handleapi::INVALID_HANDLE_VALUE;
 use winapi::um::processenv::GetStdHandle;
-use winapi::um::winbase::{ STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, SetConsoleTitleW, WriteConsoleOutputW, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO };
+use winapi::um::winbase::{ lstrcpyW, STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
+use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, SetConsoleTitleW, WriteConsoleOutputW, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO, PCONSOLE_FONT_INFOEX, PCONSOLE_SCREEN_BUFFER_INFO };
 use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, PSMALL_RECT, SMALL_RECT };
 use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
-use winapi::um::winnt::{ HANDLE, WCHAR, SHORT, LPCWSTR };
+use winapi::um::winnt::{ HANDLE, WCHAR, SHORT, LPCWSTR, LPWSTR };
 use winapi::um::winuser::wsprintfW;
 
 use widestring::U16CString;
@@ -80,7 +81,7 @@ impl Empty for SMALL_RECT {
     }
 }
 
-struct OlcConsoleGameEngine {
+pub struct OlcConsoleGameEngine {
     app_name: String,
 
     console_handle: HANDLE,
@@ -102,7 +103,7 @@ struct OlcConsoleGameEngine {
 }
 
 impl OlcConsoleGameEngine {
-    fn new() -> OlcConsoleGameEngine {
+    pub fn new() -> OlcConsoleGameEngine {
         let application_name = "default";
         let loop_state = true;
         let mouse_x = 0;
@@ -127,8 +128,12 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
-        // Implement console handle error check
+    pub fn consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
+        // Check for valid handle
+        if self.console_handle == INVALID_HANDLE_VALUE {
+            println!("failed to get valid console handle");
+            return
+        }
 
         self.screen_width = width;
         self.screen_height = height;
@@ -142,32 +147,38 @@ impl OlcConsoleGameEngine {
         };
 
         // Set window info using winapi. Will be a Result type.
-        self.set_console_window_info(self.console_handle, TRUE, self.rect_window).unwrap();
+        self.set_console_window_info(self.console_handle, TRUE, &self.rect_window).unwrap();
 
         let coord = COORD {
             X: self.screen_width,
             Y: self.screen_height,
         };
 
-        // Set the size of screen buffer. Will be a result type.
+        // Set the size of screen buffer
         self.set_console_screen_buffer_size(self.console_handle, coord).unwrap();
 
-        // Assign screen buffer to console. Will be a result type.
+        // Assign screen buffer to console
         self.set_console_active_screen_buffer(self.console_handle).unwrap();
 
         // set font size and settings
         let mut font_cfi = CONSOLE_FONT_INFOEX::empty();
+        font_cfi.cbSize = size_of::<CONSOLE_FONT_INFOEX>().try_into().unwrap();
         font_cfi.nFont = 0;
         font_cfi.dwFontSize.X = font_w;
         font_cfi.dwFontSize.Y = font_h;
         font_cfi.FontFamily = FF_DONTCARE;
         font_cfi.FontWeight = FW_NORMAL.try_into().unwrap();
 
+        // Set FaceName field for CONSOLE_FONT_INFOEX struct
+        let face_name = format!("Consolas");
+        let face_str = U16CString::from_str(face_name).unwrap();
+        let face_ptr = face_str.as_ptr();
+        let face_field_ptr = font_cfi.FaceName.as_mut_ptr();
+
+        self.set_face_name(face_field_ptr, face_ptr);
 
         // Set extended information about current console font
         self.set_current_console_font_ex(self.console_handle, FALSE, &mut font_cfi).unwrap();
-
-        //Todo: Implement wcscpy_s() function
 
         // Todo: Implement console screen buffer struct
         let mut screen_buffer_csbi = CONSOLE_SCREEN_BUFFER_INFO::empty();
@@ -179,14 +190,14 @@ impl OlcConsoleGameEngine {
         self.validate_window_size(&screen_buffer_csbi).unwrap();
 
         // Set physical console window size
-        let rect_window = SMALL_RECT {
+        self.rect_window = SMALL_RECT {
             Left: 0,
             Top: 0,
             Right: self.screen_width - 1,
             Bottom: self.screen_height - 1,
         };
 
-        self.set_console_window_info(self.console_handle, TRUE, rect_window).unwrap();
+        self.set_console_window_info(self.console_handle, TRUE, &self.rect_window).unwrap();
 
         // Todo: Implement flag logic for mouse imput
         // self.set_console_mode().unwrap();
@@ -207,7 +218,7 @@ impl OlcConsoleGameEngine {
     //
     // }
 
-    fn get_console_screen_buffer_info(&self, console_handle: HANDLE, buffer_struct: &mut CONSOLE_SCREEN_BUFFER_INFO) -> Result<i32, &'static str> {
+    fn get_console_screen_buffer_info(&self, console_handle: HANDLE, buffer_struct: PCONSOLE_SCREEN_BUFFER_INFO) -> Result<i32, &'static str> {
         let screen_buffer_info = unsafe { GetConsoleScreenBufferInfo(console_handle, buffer_struct) };
 
         if screen_buffer_info != 0 {
@@ -247,8 +258,8 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn set_console_window_info(&self, console_handle: HANDLE, absolute: BOOL, rect_struct: SMALL_RECT) -> Result<i32, &'static str> {
-        let window_info = unsafe { SetConsoleWindowInfo(console_handle, absolute, &rect_struct) };
+    fn set_console_window_info(&self, console_handle: HANDLE, absolute: BOOL, rect_struct: *const SMALL_RECT) -> Result<i32, &'static str> {
+        let window_info = unsafe { SetConsoleWindowInfo(console_handle, absolute, rect_struct) };
 
         if window_info != 0 {
             return Ok(window_info)
@@ -257,7 +268,7 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn set_current_console_font_ex(&self, console_handle: HANDLE, max_window: BOOL, font_struct: &mut CONSOLE_FONT_INFOEX) -> Result<i32, &'static str> {
+    fn set_current_console_font_ex(&self, console_handle: HANDLE, max_window: BOOL, font_struct: PCONSOLE_FONT_INFOEX) -> Result<i32, &'static str> {
         let set_font = unsafe { SetCurrentConsoleFontEx(console_handle, max_window, font_struct) };
 
         if set_font != 0 {
@@ -265,6 +276,11 @@ impl OlcConsoleGameEngine {
         } else {
             return Err("Set current console font function failed")
         }
+    }
+
+    //not sure this is right
+    fn set_face_name(&self, string_1: LPWSTR, string_2: LPCWSTR) {
+        unsafe { lstrcpyW(string_1, string_2) };
     }
 
     fn validate_window_size(&self, buffer_struct: &CONSOLE_SCREEN_BUFFER_INFO) -> Result<&'static str, &'static str> {
@@ -299,7 +315,7 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn game_thread(&mut self) {
+    pub fn game_thread(&mut self) {
         // Validate successful on_user_create function call
         self.on_user_create();
 
@@ -353,10 +369,18 @@ impl OlcConsoleGameEngine {
     }
 
     fn on_user_update(&mut self, time_delta: Duration) -> bool {
+        // Possibly more efficent rand use
+        // let mut v = vec![1, 2, 3];
+        //
+        // for x in v.iter_mut() {
+        //     *x = rand::random();
+        // }
+
         for x in 0..self.screen_width {
             for y in 0..self.screen_height {
-                let ran_num = rand::random::<i16>();
-                self.draw(x, y, '#' as SHORT, ran_num);
+                let ran_num = rand::random::<u16>();
+                let conv = ran_num % 16;
+                self.draw(x, y, '#' as SHORT, conv.try_into().unwrap());
             }
         }
 
