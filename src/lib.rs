@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use std::mem::{ size_of, zeroed };
 use std::time:: { Duration, Instant };
 
-use rand::prelude::*;
+use rand::random;
 
 use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
@@ -146,7 +146,7 @@ impl OlcConsoleGameEngine {
             Bottom: 1,
         };
 
-        // Set window info using winapi. Will be a Result type.
+        // Set window info using winapi
         self.set_console_window_info(self.console_handle, TRUE, &self.rect_window).unwrap();
 
         let coord = COORD {
@@ -160,7 +160,7 @@ impl OlcConsoleGameEngine {
         // Assign screen buffer to console
         self.set_console_active_screen_buffer(self.console_handle).unwrap();
 
-        // set font size and settings
+        // set font size and setting data
         let mut font_cfi = CONSOLE_FONT_INFOEX::empty();
         font_cfi.cbSize = size_of::<CONSOLE_FONT_INFOEX>().try_into().unwrap();
         font_cfi.nFont = 0;
@@ -180,7 +180,7 @@ impl OlcConsoleGameEngine {
         // Set extended information about current console font
         self.set_current_console_font_ex(self.console_handle, FALSE, &mut font_cfi).unwrap();
 
-        // Todo: Implement console screen buffer struct
+        // Initialize CONSOLE_SCREEN_BUFFER_INFO struct
         let mut screen_buffer_csbi = CONSOLE_SCREEN_BUFFER_INFO::empty();
 
         // Retrive information about supplied console handle
@@ -202,12 +202,8 @@ impl OlcConsoleGameEngine {
         // Todo: Implement flag logic for mouse imput
         // self.set_console_mode().unwrap();
 
-        // Todo: Implement screen buffer logic
-        // let mut window_buffer: Vec<wchar_t> = vec!['*' as u16; (self.screen_width * self.screen_height).try_into().unwrap()];
+        // Initialize text buffer and allocate memory
         self.text_buffer = vec![CHAR_INFO::empty(); (self.screen_width * self.screen_height).try_into().unwrap()];
-        // May not need these pointers to buffer
-        // let buffer_ptr = window_buffer.as_ptr();
-        // let buff_sec_ptr = window_buffer.as_mut_ptr();
 
         // Todo: Implement logic to handle Ctrl+C functionality
         // self.set_console_ctrl_handler(handler_routine, bool);
@@ -325,10 +321,10 @@ impl OlcConsoleGameEngine {
         let mut s: [wchar_t; 256] = [0; 256];
         let s_ptr = s.as_mut_ptr();
 
-        // Console title information
-        let w_char = format!("OneLoneCoder.com - Console Game Engine - {}", self.app_name);
-        let w_string = U16CString::from_str(w_char).unwrap();
-        let w_ptr = w_string.as_ptr();
+        // Window title information
+        let mut w_char = format!("OneLoneCoder.com - Console Game Engine - {}", self.app_name);
+        let mut w_string = U16CString::from_str(w_char).unwrap();
+        let mut w_ptr = w_string.as_ptr();
 
         // Time deltas for smooth fps
         let mut tp_1 = Instant::now();
@@ -352,6 +348,11 @@ impl OlcConsoleGameEngine {
                 unsafe {
                     let mut rect = self.rect_window;
                     let rect_ptr = &mut rect;
+
+                    w_char = format!("OneLoneCoder.com - Console Game Engine - {} - FPS: {:.2}", self.app_name, in_nano);
+                    w_string = U16CString::from_str(w_char).unwrap();
+                    w_ptr = w_string.as_ptr();
+
                     wsprintfW(s_ptr, w_ptr);
 
                     self.set_console_title(s.as_ptr()).unwrap();
@@ -378,7 +379,7 @@ impl OlcConsoleGameEngine {
 
         for x in 0..self.screen_width {
             for y in 0..self.screen_height {
-                let ran_num = rand::random::<u16>();
+                let ran_num = random::<u16>();
                 let conv = ran_num % 16;
                 self.draw(x, y, '#' as SHORT, conv.try_into().unwrap());
             }
