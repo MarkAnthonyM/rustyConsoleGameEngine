@@ -311,6 +311,14 @@ impl OlcConsoleGameEngine {
         }
     }
 
+    fn clip(&self, x: &mut i16, y: &mut i16) {
+        // Todo: Replace with pattern match expression
+        if *x < 0 { *x = 0; }
+        if *x >= self.screen_width { *x = self.screen_width; }
+        if *y < 0 { *y = 0; }
+        if *y >= self.screen_height { *y = self.screen_height; }
+    }
+
     pub fn game_thread(&mut self) {
         // Validate successful on_user_create function call
         self.on_user_create();
