@@ -370,13 +370,6 @@ impl OlcConsoleGameEngine {
     }
 
     fn on_user_update(&mut self, time_delta: Duration) -> bool {
-        // Possibly more efficent rand use
-        // let mut v = vec![1, 2, 3];
-        //
-        // for x in v.iter_mut() {
-        //     *x = rand::random();
-        // }
-
         for x in 0..self.screen_width {
             for y in 0..self.screen_height {
                 let ran_num = random::<u16>();
