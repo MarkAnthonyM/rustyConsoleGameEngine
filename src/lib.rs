@@ -125,7 +125,7 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn _consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
+    fn consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
         // Implement console handle error check
 
         self.screen_width = width;
@@ -297,14 +297,14 @@ impl OlcConsoleGameEngine {
         }
     }
 
-    fn game_thread(&self) {
+    fn game_thread(&mut self) {
         // Validate successful on_user_create function call
-        self.validate_user_create().unwrap();
+        self.on_user_create();
 
         // Todo: Implement sound system enable check
 
         // Window Title buffer
-        let s: [wchar_t; 256];
+        let mut s: [wchar_t; 256] = [0; 256];
         let s_ptr = s.as_mut_ptr();
 
         // Console title information
@@ -330,13 +330,27 @@ impl OlcConsoleGameEngine {
                 // Todo: Implement user update function
 
                 // Sets title and pushes frame to buffer
-                wsprintfW(s_ptr, w_ptr);
-                self.set_console_title(s.as_ptr());
-                self.write_console_output(self.console_handle, self.text_buffer.as_ptr(), COORD {X: self.screen_width, Y: self.screen_height}, COORD { X:0, Y:0 }, &mut self.rect_window);
+                unsafe {
+                    let mut rect = self.rect_window;
+                    let rect_ptr = &mut rect;
+                    wsprintfW(s_ptr, w_ptr);
+
+                    self.set_console_title(s.as_ptr()).unwrap();
+
+                    self.write_console_output(self.console_handle, self.text_buffer.as_ptr(), COORD {X: self.screen_width, Y: self.screen_height}, COORD { X:0, Y:0 }, rect_ptr).unwrap();
+                }
             }
         }
 
         // Todo: Implement free resources functions
+    }
+
+    fn on_user_create(&self) -> bool {
+        true
+    }
+
+    fn on_user_update(&self) -> bool {
+        true
     }
 }
 
