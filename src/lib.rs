@@ -319,6 +319,35 @@ impl OlcConsoleGameEngine {
         }
     }
 
+    // Todo: Test this function. Arithmetic may be wrong
+    fn draw_circle(&mut self, xc: usize, yc: usize, r: usize, c: SHORT, col: SHORT) {
+        let mut x = 0;
+        let mut y = r;
+        let mut p = 3 - 2 * r;
+        if r == 0 {
+            return
+        }
+
+        while y >= x { // only formulate 1/8 of circle
+            self.draw(xc - x, yc - y, c, col);// upper left left
+            self.draw(xc - y, yc - x, c, col);// upper upper left
+            self.draw(xc + y, yc - x, c, col);// uper upper right
+            self.draw(xc + x, yc - y, c, col);// upper right right
+            self.draw(xc - x, yc + y, c, col);// lower left left
+            self.draw(xc - y, yc + x, c, col);// lower lower left
+            self.draw(xc + y, yc + x, c, col);// lower lower right
+            self.draw(xc + x, yc + y, c, col);// lower right right
+            if p < 0 {
+                x += 1 + 6;
+                p += 4 * x;
+            } else {
+                x += 1;
+                y -= 1;
+                p += 4 * (x - y) + 10;
+            }
+        }
+    }
+
     pub fn game_thread(&mut self) {
         // Validate successful on_user_create function call
         self.on_user_create();
@@ -381,8 +410,8 @@ impl OlcConsoleGameEngine {
         for x in 0..self.screen_width as usize {
             for y in 0..self.screen_height as usize {
                 let ran_num = random::<u16>();
-                let conv = ran_num % 16;
-                self.draw(x, y, '#' as SHORT, conv.try_into().unwrap());
+                let conv = ran_num % 2;
+                self.draw(x, y, '@' as SHORT, conv.try_into().unwrap());
             }
         }
 
