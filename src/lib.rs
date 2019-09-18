@@ -348,6 +348,79 @@ impl OlcConsoleGameEngine {
         }
     }
 
+    // Todo: Test this function
+    fn draw_line(&mut self, x_1: i16, y_1: i16, x_2: i16, y_2: i16, c: SHORT, col: SHORT){
+        let (mut x, mut y, xe, ye): (i16, i16, i16, i16);
+        let dx = x_2 - x_1;
+        let dy = y_2 - y_1;
+        let dx_1 = dx.abs();
+        let dy_1 = dy.abs();
+        let mut px = 2 * dy_1 - dx_1;
+        let mut py = 2 * dx_1 - dy_1;
+
+        if dy_1 <= dx_1 {
+            if dx >= 0 {
+                x = x_1;
+                y = y_1;
+                xe = x_2;
+            } else {
+                x = x_2;
+                y = y_2;
+                xe = x_1;
+            }
+
+            self.draw(x as usize, y as usize, c, col);
+
+            for _i in x .. xe {
+                x += 1;
+
+                if px < 0 {
+                    px += 2 * dy_1;
+                } else {
+                    if (dx < 0 && dy < 0) || (dx > 0 && dy > 0) {
+                        y += 1;
+                    } else {
+                        y -= 1;
+                    }
+
+                    px += 2 * (dy_1 - dx_1);
+                }
+
+                self.draw(x as usize, y as usize, c, col);
+            }
+        } else {
+            if dy >= 0 {
+                x = x_1;
+                y = y_1;
+                ye = y_2;
+            } else {
+                x = x_2;
+                y = y_2;
+                ye = y_1;
+            }
+
+            self.draw(x as usize, y as usize, c, col);
+
+            for _i in y .. ye {
+                y += 1;
+
+                if py <= 0 {
+                    py += 2 * dx_1;
+                } else {
+                    if (dx < 0 && dy < 0) || (dx > 0 && dy> 0) {
+                        x += 1;
+                    } else {
+                        x -= 1;
+                    }
+
+                    py += 2 * (dx_1 - dy_1);
+                }
+
+                self.draw(x as usize, y as usize, c, col);
+            }
+        }
+    }
+
     pub fn game_thread(&mut self) {
         // Validate successful on_user_create function call
         self.on_user_create();
@@ -410,7 +483,7 @@ impl OlcConsoleGameEngine {
         for x in 0..self.screen_width as usize {
             for y in 0..self.screen_height as usize {
                 let ran_num = random::<u16>();
-                let conv = ran_num % 2;
+                let conv = ran_num % 16;
                 self.draw(x, y, '@' as SHORT, conv.try_into().unwrap());
             }
         }
