@@ -349,7 +349,7 @@ impl OlcConsoleGameEngine {
     }
 
     // Todo: Test this function
-    fn draw_line(&mut self, x_1: i16, y_1: i16, x_2: i16, y_2: i16, c: SHORT, col: SHORT){
+    fn draw_line(&mut self, x_1: i16, y_1: i16, x_2: i16, y_2: i16, c: SHORT, col: SHORT) {
         let (mut x, mut y, xe, ye): (i16, i16, i16, i16);
         let dx = x_2 - x_1;
         let dy = y_2 - y_1;
@@ -419,6 +419,44 @@ impl OlcConsoleGameEngine {
                 self.draw(x as usize, y as usize, c, col);
             }
         }
+    }
+
+    // Todo: Implement function logic
+    fn draw_partial_sprite() {
+        unimplemented!();
+    }
+
+    // Todo: Implement function logic
+    fn draw_sprite() {
+        unimplemented!();
+    }
+
+    fn draw_string() {
+        unimplemented!();
+    }
+
+    fn draw_string_alpha() {
+        unimplemented!();
+    }
+
+    fn draw_triangle() {
+        unimplemented!();
+    }
+
+    fn draw_wireframe_model() {
+        unimplemented!();
+    }
+
+    fn fill() {
+        unimplemented!();
+    }
+
+    fn fill_circle() {
+        unimplemented!();
+    }
+
+    fn fill_triangle() {
+        unimplemented!();
     }
 
     pub fn game_thread(&mut self) {
