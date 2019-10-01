@@ -89,7 +89,7 @@ pub struct OlcConsoleGameEngine {
 
     enable_sound: bool,
 
-    loop_state: bool,
+    game_state_active: bool,
 
     mouse_pos_x: u32,
     mouse_pos_y: u32,
@@ -105,7 +105,7 @@ pub struct OlcConsoleGameEngine {
 impl OlcConsoleGameEngine {
     pub fn new() -> OlcConsoleGameEngine {
         let application_name = "default";
-        let loop_state = true;
+        let game_state_active = true;
         let mouse_x = 0;
         let mouse_y = 0;
         let output_handle = unsafe{ GetStdHandle(STD_OUTPUT_HANDLE) };
@@ -118,7 +118,7 @@ impl OlcConsoleGameEngine {
             console_handle: output_handle,
             console_handle_in: input_handle,
             enable_sound: true,
-            loop_state: loop_state,
+            game_state_active: game_state_active,
             mouse_pos_x: mouse_x,
             mouse_pos_y: mouse_y,
             rect_window: rect_window,
@@ -479,8 +479,8 @@ impl OlcConsoleGameEngine {
         let mut tp_2 = Instant::now();
 
         // Main game loop
-        while self.loop_state {
-            while self.loop_state {
+        while self.game_state_active {
+            while self.game_state_active {
                 // Time delta calulations for smooth frame speed
                 tp_2 = Instant::now();
                 let mut elapsed_time = tp_2.duration_since(tp_1);
