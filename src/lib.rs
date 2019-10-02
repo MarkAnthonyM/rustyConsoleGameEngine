@@ -1,6 +1,7 @@
 use std::convert::TryInto;
 use std::mem::{ size_of, zeroed };
 use std::time:: { Duration, Instant };
+use std::thread;
 
 use rand::random;
 
@@ -459,7 +460,7 @@ impl OlcConsoleGameEngine {
         unimplemented!();
     }
 
-    pub fn game_thread(&mut self) {
+    pub fn game_thread(mut self) {
         // Validate successful on_user_create function call
         self.on_user_create();
 
@@ -527,6 +528,15 @@ impl OlcConsoleGameEngine {
         }
 
         true
+    }
+
+    pub fn start(self) {
+        let game_loop = self.game_thread();
+        let child = thread::spawn(move || {
+            game_loop
+        });
+
+        let _child_handle = child.join();
     }
 }
 
