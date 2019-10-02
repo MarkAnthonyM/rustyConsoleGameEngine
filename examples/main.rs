@@ -7,5 +7,5 @@ fn main() {
 
     demo.consturct_console(130, 60, 8, 16);
 
-    demo.game_thread();
+    demo.start();
 }
