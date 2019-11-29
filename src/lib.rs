@@ -3,8 +3,6 @@ use std::mem::{ size_of, zeroed };
 use std::time:: { Duration, Instant };
 use std::thread;
 
-use rand::random;
-
 use winapi::ctypes:: { wchar_t };
 use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::handleapi::INVALID_HANDLE_VALUE;
@@ -97,14 +95,16 @@ pub struct OlcConsoleGameEngine {
 
     rect_window: SMALL_RECT,
 
-    screen_width: i16,
-    screen_height: i16,
+    pub screen_width: i16,
+    pub screen_height: i16,
 
     text_buffer: Vec<CHAR_INFO>,
+
+    update_function: Option<Box<dyn FnMut(&mut OlcConsoleGameEngine)>>,
 }
 
 impl OlcConsoleGameEngine {
-    pub fn new() -> OlcConsoleGameEngine {
+    pub fn new(closure: Box<dyn FnMut(&mut OlcConsoleGameEngine)>) -> OlcConsoleGameEngine {
         let application_name = "default";
         let game_state_active = true;
         let mouse_x = 0;
@@ -126,6 +126,7 @@ impl OlcConsoleGameEngine {
             screen_width: 80,
             screen_height: 80,
             text_buffer: window_buffer,
+            update_function: Some(closure),
         }
     }
 
@@ -308,7 +309,7 @@ impl OlcConsoleGameEngine {
         if *y >= self.screen_height { *y = self.screen_height; }
     }
 
-    fn draw(&mut self, x: usize, y: usize, c: SHORT, col: SHORT) {
+    pub fn draw(&mut self, x: usize, y: usize, c: SHORT, col: SHORT) {
         if x >= 0 && x < self.screen_width.try_into().unwrap() && y >= 0 && y < self.screen_height.try_into().unwrap() {
             unsafe {
                 let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
@@ -491,7 +492,7 @@ impl OlcConsoleGameEngine {
                 // Todo: Implement input handle logic
 
                 // Todo: Implement user update function
-                self.on_user_update(elapsed_time);
+                self.on_user_update();
 
                 // Update title and push frame to buffer
                 unsafe {
@@ -518,16 +519,11 @@ impl OlcConsoleGameEngine {
         true
     }
 
-    fn on_user_update(&mut self, time_delta: Duration) -> bool {
-        for x in 0..self.screen_width as usize {
-            for y in 0..self.screen_height as usize {
-                let ran_num = random::<u16>();
-                let conv = ran_num % 16;
-                self.draw(x, y, '@' as SHORT, conv.try_into().unwrap());
-            }
+    fn on_user_update(&mut self) {
+        if let Some(mut func) = self.update_function.take() {
+            func(self);
+            self.update_function = Some(func);
         }
-
-        true
     }
 
     pub fn start(self) {
