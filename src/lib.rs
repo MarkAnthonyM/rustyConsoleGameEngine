@@ -310,7 +310,7 @@ impl OlcConsoleGameEngine {
     }
 
     pub fn draw(&mut self, x: usize, y: usize, c: SHORT, col: SHORT) {
-        if x >= 0 && x < self.screen_width.try_into().unwrap() && y >= 0 && y < self.screen_height.try_into().unwrap() {
+        if x < self.screen_width.try_into().unwrap() && y < self.screen_height.try_into().unwrap() {
             unsafe {
                 let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
                 *chr.UnicodeChar_mut() = c.try_into().unwrap();
