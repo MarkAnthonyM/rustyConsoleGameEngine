@@ -98,7 +98,7 @@ pub struct OlcConsoleGameEngine {
     pub screen_width: i16,
     pub screen_height: i16,
 
-    text_buffer: Vec<CHAR_INFO>,
+    pub text_buffer: Vec<CHAR_INFO>,
 
     update_function: Option<Box<dyn FnMut(&mut OlcConsoleGameEngine)>>,
 }
