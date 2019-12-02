@@ -1,6 +1,6 @@
-extern crate olc_console_engine_oop;
+extern crate rustyConsoleGameEngine;
 
-use olc_console_engine_oop::OlcConsoleGameEngine;
+use rustyConsoleGameEngine::OlcConsoleGameEngine;
 use std::convert::TryInto;
 use winapi::um::winnt::SHORT;
 
