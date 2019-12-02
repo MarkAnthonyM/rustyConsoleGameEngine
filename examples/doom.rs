@@ -46,7 +46,7 @@ fn main() {
 
     let mut demo = OlcConsoleGameEngine::new(test_clousre);
 
-    demo.consturct_console(300, 50, 6, 12);
+    demo.consturct_console(100, 50, 6, 12);
 
     demo.start();
 }
