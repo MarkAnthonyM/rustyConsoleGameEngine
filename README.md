@@ -2,7 +2,6 @@
 
 A Rust implementation of the [olcConsoleGameEngine](https://github.com/OneLoneCoder/videos/blob/master/olcConsoleGameEngine.h)
 
-![](https://media.giphy.com/media/XB4MM7zrTuGfURTjlc/480w.webp)
 ![](https://media.giphy.com/media/TjMcssqMuzcz2rUmnN/480w.webp)
 
 ## Status
