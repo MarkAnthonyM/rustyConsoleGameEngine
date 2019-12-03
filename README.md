@@ -4,7 +4,7 @@ A Rust implementation of the [olcConsoleGameEngine](https://github.com/OneLoneCo
 
 <p align="center">
   <img src="https://media.giphy.com/media/TjMcssqMuzcz2rUmnN/giphy.gif">
-  <img src="https://media.giphy.com/media/XB4MM7zrTuGfURTjlc/giphy.gif">
+  <img src="https://giphy.com/gifs/TjMcssqMuzcz2rUmnN/html5">
 </p>
 
 ## Status
