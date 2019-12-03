@@ -3,8 +3,7 @@
 A Rust implementation of the [olcConsoleGameEngine](https://github.com/OneLoneCoder/videos/blob/master/olcConsoleGameEngine.h)
 
 <p align="center">
-  <img src="https://media.giphy.com/media/TjMcssqMuzcz2rUmnN/giphy.gif" width="480">
-  <img src="https://media.giphy.com/media/TjMcssqMuzcz2rUmnN/giphy.gif" width="480">
+  <img src="http://drive.google.com/uc?export=view&id=1Vqwpq1-WA_U7kycZNQoL_PfpEodbGcU8">
 </p>
 
 ## Status
