@@ -3,6 +3,9 @@ name = "rustyConsoleGameEngine"
 version = "0.1.0"
 authors = ["Mark Anthony <markanthonymartinez9@gmail.com>"]
 edition = "2018"
+readme = "README.md"
+repository = "https://github.com/MarkAnthonyM/rustyConsoleGameEngine"
+homepage = "https://crates.io/crates/rustyConsoleGameEngine"
 description = "A rusty port of the olcConsoleGameEngine."
 license = "GPL-3.0-or-later"
 
