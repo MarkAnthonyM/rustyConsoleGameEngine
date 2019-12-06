@@ -80,7 +80,7 @@ impl Empty for SMALL_RECT {
     }
 }
 
-pub struct OlcConsoleGameEngine {
+pub struct OlcConsoleGameEngine<T> {
     app_name: String,
 
     console_handle: HANDLE,
@@ -89,6 +89,8 @@ pub struct OlcConsoleGameEngine {
     enable_sound: bool,
 
     game_state_active: bool,
+
+    pub game_struct: Vec<T>,
 
     mouse_pos_x: u32,
     mouse_pos_y: u32,
@@ -100,11 +102,11 @@ pub struct OlcConsoleGameEngine {
 
     pub text_buffer: Vec<CHAR_INFO>,
 
-    update_function: Option<Box<dyn FnMut(&mut OlcConsoleGameEngine)>>,
+    update_function: Option<Box<dyn FnMut(&mut OlcConsoleGameEngine<T>)>>,
 }
 
-impl OlcConsoleGameEngine {
-    pub fn new(closure: Box<dyn FnMut(&mut OlcConsoleGameEngine)>) -> OlcConsoleGameEngine {
+impl<T> OlcConsoleGameEngine<T> {
+    pub fn new(closure: Box<dyn FnMut(&mut OlcConsoleGameEngine<T>)>, game_data: T) -> OlcConsoleGameEngine<T> {
         let application_name = "default";
         let game_state_active = true;
         let mouse_x = 0;
@@ -120,6 +122,7 @@ impl OlcConsoleGameEngine {
             console_handle_in: input_handle,
             enable_sound: true,
             game_state_active: game_state_active,
+            game_struct: vec![game_data],
             mouse_pos_x: mouse_x,
             mouse_pos_y: mouse_y,
             rect_window: rect_window,
