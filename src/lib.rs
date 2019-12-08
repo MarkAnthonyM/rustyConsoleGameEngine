@@ -12,7 +12,7 @@ use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, S
 use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, PSMALL_RECT, SMALL_RECT };
 use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
 use winapi::um::winnt::{ HANDLE, WCHAR, SHORT, LPCWSTR, LPWSTR };
-use winapi::um::winuser::wsprintfW;
+use winapi::um::winuser::{ GetAsyncKeyState, wsprintfW };
 
 use widestring::U16CString;
 
@@ -80,6 +80,23 @@ impl Empty for SMALL_RECT {
     }
 }
 
+#[derive(Copy, Clone)]
+pub struct KeyState {
+    pub pressed: bool,
+    pub released: bool,
+    pub held: bool,
+}
+
+impl KeyState {
+    fn new() -> Self {
+        KeyState {
+            pressed: false,
+            released: false,
+            held: true,
+        }
+    }
+}
+
 pub struct OlcConsoleGameEngine<T> {
     app_name: String,
 
@@ -91,6 +108,11 @@ pub struct OlcConsoleGameEngine<T> {
     game_state_active: bool,
 
     pub game_struct: Vec<T>,
+
+    pub keys: [KeyState; 256],
+
+    key_state_new: [i16; 256],
+    key_state_old: [i16; 256],
 
     mouse_pos_x: u32,
     mouse_pos_y: u32,
@@ -123,6 +145,9 @@ impl<T> OlcConsoleGameEngine<T> {
             enable_sound: true,
             game_state_active: game_state_active,
             game_struct: vec![game_data],
+            keys: [KeyState::new(); 256],
+            key_state_new: [0; 256],
+            key_state_old: [0; 256],
             mouse_pos_x: mouse_x,
             mouse_pos_y: mouse_y,
             rect_window: rect_window,
@@ -512,7 +537,28 @@ impl<T> OlcConsoleGameEngine<T> {
                 let in_nano = elapsed_time.as_micros() as f64 / 100_000.0;
                 tp_1 = tp_2;
 
-                // Todo: Implement input handle logic
+                // Todo: Test functionality. Remove this when working
+                for i in 0..256 {
+                    unsafe {
+                        self.key_state_new[i] = GetAsyncKeyState(i as i32);
+                    }
+
+                    self.keys[i].pressed = false;
+                    self.keys[i].released = false;
+
+                    if self.key_state_new[i] != self.key_state_old[i] {
+
+                        if self.key_state_new[i] as u16 & 0x8000 as u16 == 1 {
+                            self.keys[i].pressed = !self.keys[i].held;
+                            self.keys[i].held = true;
+                        } else {
+                            self.keys[i].released = true;
+                            self.keys[i].held = false;
+                        }
+                    }
+
+                    self.key_state_old[i] = self.key_state_new[i];
+                }
 
                 // Todo: Implement user update function
                 self.on_user_update();
