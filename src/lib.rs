@@ -92,7 +92,7 @@ impl KeyState {
         KeyState {
             pressed: false,
             released: false,
-            held: true,
+            held: false,
         }
     }
 }
@@ -537,9 +537,7 @@ impl<T> OlcConsoleGameEngine<T> {
                 // Time delta calulations for smooth frame speed
                 tp_2 = Instant::now();
                 let elapsed_time = tp_2.duration_since(tp_1);
-                // self.time_delta = elapsed_time.as_micros() as f64 / 1_000.0;
-                let fps = 1.0 / elapsed_time.as_secs_f64();
-                self.time_delta = elapsed_time.as_secs_f64() / 4_000.0;
+                self.time_delta = elapsed_time.as_secs_f64();
                 tp_1 = tp_2;
 
                 // Todo: Test functionality. Remove this when working
@@ -553,7 +551,7 @@ impl<T> OlcConsoleGameEngine<T> {
 
                     if self.key_state_new[i] != self.key_state_old[i] {
 
-                        if self.key_state_new[i] as u16 & 0x8000 as u16 == 1 {
+                        if self.key_state_new[i]  == -32768 {
                             self.keys[i].pressed = !self.keys[i].held;
                             self.keys[i].held = true;
                         } else {
@@ -573,7 +571,7 @@ impl<T> OlcConsoleGameEngine<T> {
                     let mut rect = self.rect_window;
                     let rect_ptr = &mut rect;
 
-                    w_char = format!("OneLoneCoder.com - Console Game Engine - {} - FPS: {:.2}", self.app_name, fps);
+                    w_char = format!("OneLoneCoder.com - Console Game Engine - {} - FPS: {:.2}", self.app_name, 1.0 / self.time_delta);
                     w_string = U16CString::from_str(w_char).unwrap();
                     w_ptr = w_string.as_ptr();
 
