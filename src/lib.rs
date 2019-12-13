@@ -464,8 +464,19 @@ impl<T> OlcConsoleGameEngine<T> {
         unimplemented!();
     }
 
-    fn draw_string() {
-        unimplemented!();
+    pub fn draw_string(&mut self, x: usize, y: usize, c: String, col: SHORT) {
+        let mut s = String::new();
+        s += &c;
+        let s_slice = &s.as_bytes();
+
+        unsafe {
+            for i in 0..s_slice.len() {
+                let mut chr: CHAR_INFO_Char = CHAR_INFO_Char::empty();
+                *chr.UnicodeChar_mut() = s_slice[i].try_into().unwrap();
+                self.text_buffer[y * self.screen_width as usize + x + i].Char = chr;
+                self.text_buffer[y * self.screen_width as usize + x + i].Attributes = col.try_into().unwrap();
+            }
+        }
     }
 
     pub fn draw_string_alpha(&mut self, x: usize, y: usize, c: &'static str, col: SHORT) {
