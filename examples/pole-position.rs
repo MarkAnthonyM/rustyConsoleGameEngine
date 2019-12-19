@@ -132,7 +132,9 @@ fn main() {
 
             for y in 0..data.screen_height / 2 {
                 for x in 0..data.screen_width {
-                    if y >= 1 {
+
+                    // Draw sunset
+                    if y >= 1 && y <= 15 {
                         let row = (data.screen_height / 2) as usize - y as usize;
 
                         let pixel = data.text_buffer[row * data.screen_width as usize + x as usize].Attributes;
@@ -145,6 +147,15 @@ fn main() {
                             data.text_buffer[element - data.screen_width as usize].Attributes = pixel - 16;
                         }
                     }
+
+                    // Draw stars
+                    // if y <= 9 {
+                    //     let element = y * data.screen_width + x;
+                    //
+                    //     let pixel = '.' as i16;
+                    //
+                    //     data.draw(x as usize, y as usize, pixel, 0x000F);
+                    // }
 
                     let perspective = y as f64 / (data.screen_height as f64 / 2.0);
 
