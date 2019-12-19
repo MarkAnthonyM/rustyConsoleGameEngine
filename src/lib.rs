@@ -8,17 +8,55 @@ use winapi::shared::minwindef::{ BOOL, TRUE, FALSE };
 use winapi::um::handleapi::INVALID_HANDLE_VALUE;
 use winapi::um::processenv::GetStdHandle;
 use winapi::um::winbase::{ lstrcpyW, STD_OUTPUT_HANDLE, STD_INPUT_HANDLE };
-use winapi::um::wincon::{ GetConsoleScreenBufferInfo, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, SetConsoleTitleW, WriteConsoleOutputW, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO, PCONSOLE_FONT_INFOEX, PCONSOLE_SCREEN_BUFFER_INFO };
+use winapi::um::wincon::{ GetConsoleScreenBufferInfo, GetConsoleScreenBufferInfoEx, SetCurrentConsoleFontEx, SetConsoleWindowInfo, SetConsoleScreenBufferInfoEx, SetConsoleScreenBufferSize, SetConsoleActiveScreenBuffer, SetConsoleTitleW, WriteConsoleOutputW, CONSOLE_FONT_INFOEX, CONSOLE_SCREEN_BUFFER_INFO, CONSOLE_SCREEN_BUFFER_INFOEX, PCONSOLE_FONT_INFOEX, PCONSOLE_SCREEN_BUFFER_INFO, PCONSOLE_SCREEN_BUFFER_INFOEX };
 use winapi::um::wincontypes::{ CHAR_INFO, CHAR_INFO_Char, COORD, PSMALL_RECT, SMALL_RECT };
-use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL };
+use winapi::um::wingdi::{ FF_DONTCARE, FW_NORMAL, RGB };
 use winapi::um::winnt::{ HANDLE, WCHAR, SHORT, LPCWSTR, LPWSTR };
 use winapi::um::winuser::{ GetAsyncKeyState, wsprintfW };
 
 use widestring::U16CString;
 
+pub enum Color {
+    black = 0x0000,
+    fg_dark_blue = 0x0001,
+    fg_dark_green = 0x0002,
+    fg_dark_cyan = 0x0003,
+    fg_dark_red = 0x0004,
+    fg_dark_magenta = 0x0005,
+    fg_dark_yellow = 0x0006,
+    fg_grey = 0x0007,
+    fg_dark_grey = 0x0008,
+    fg_blue = 0x0009,
+    fg_green = 0x000A,
+    fg_cyan = 0x000B,
+    fg_red = 0x000C,
+    fg_magenta = 0x000D,
+    fg_yellow = 0x000E,
+    fg_white = 0x000F,
+    bg_dark_blue = 0x0010,
+    bg_dark_green = 0x0020,
+    bg_dark_cyan = 0x0030,
+    bg_dark_red = 0x0040,
+    bg_dark_magenta = 0x0050,
+    bg_dark_yellow = 0x0060,
+    bg_grey = 0x0070,
+    bg_dark_grey = 0x0080,
+    bg_blue = 0x0090,
+    bg_green = 0x00A0,
+    bg_cyan = 0x00B0,
+    bg_red = 0x00C0,
+    bg_magenta = 0x00D0,
+    bg_yellow = 0x00E0,
+    bg_white = 0x00F0,
+}
+
 //Initialize empty struct
 trait Empty {
     fn empty() -> Self;
+}
+
+trait Palette {
+    fn rgb(&mut self, rgb_values: DefaultPalette);
 }
 
 impl Empty for CHAR_INFO {
@@ -69,6 +107,22 @@ impl Empty for CONSOLE_SCREEN_BUFFER_INFO {
     }
 }
 
+impl Empty for CONSOLE_SCREEN_BUFFER_INFOEX {
+    fn empty() -> CONSOLE_SCREEN_BUFFER_INFOEX {
+        CONSOLE_SCREEN_BUFFER_INFOEX {
+            cbSize: 0,
+            dwSize: COORD::empty(),
+            dwCursorPosition: COORD::empty(),
+            wAttributes: 0,
+            srWindow: SMALL_RECT::empty(),
+            dwMaximumWindowSize: COORD::empty(),
+            wPopupAttributes: 0,
+            bFullscreenSupported: FALSE,
+            ColorTable: [0; 16],
+        }
+    }
+}
+
 impl Empty for SMALL_RECT {
     fn empty() -> SMALL_RECT {
         SMALL_RECT {
@@ -76,6 +130,16 @@ impl Empty for SMALL_RECT {
             Right: 0,
             Bottom: 0,
             Left: 0,
+        }
+    }
+}
+
+impl Palette for CONSOLE_SCREEN_BUFFER_INFOEX {
+    fn rgb(&mut self, rgb_values: DefaultPalette) {
+        for i in 0..rgb_values.palette.len() {
+            let color_ref = unsafe { RGB(rgb_values.palette[i].0, rgb_values.palette[i].1, rgb_values.palette[i].2) };
+
+            self.ColorTable[i] = color_ref;
         }
     }
 }
@@ -93,6 +157,66 @@ impl KeyState {
             pressed: false,
             released: false,
             held: false,
+        }
+    }
+}
+
+// pub struct CustomPalette {
+//     palette: Vec<(u8, u8, u8)>,
+// }
+//
+// impl CustomPalette {
+//     pub fn new(palette: Vec<(u8, u8, u8)>) -> Self {
+//         CustomPalette {
+//             palette,
+//         }
+//     }
+// }
+
+struct DefaultPalette {
+    palette: Vec<(u8, u8, u8)>,
+    sunset_palette: Vec<(u8, u8, u8)>,
+}
+
+impl DefaultPalette {
+    fn new() -> Self {
+        DefaultPalette {
+            palette: vec![
+                (0, 0, 0),
+                (0, 128, 0),
+                (0, 128, 0),
+                (0, 128, 128),
+                (128, 0, 0),
+                (128, 0, 128),
+                (128, 128, 0),
+                (192, 192, 192),
+                (128, 128, 128),
+                (0, 0, 255),
+                (0, 255, 0),
+                (0, 255, 255),
+                (255, 0, 0),
+                (255, 0, 255),
+                (255, 255, 0),
+                (255, 255, 255),
+            ],
+            sunset_palette: vec![
+                (7,7,7),
+                (71,15,7),
+                (103,31,7),
+                (143,39,7),
+                (175,63,7),
+                (199,71,7),
+                (233,87,7),
+                (215,95,7),
+                (207,111,15),
+                (207,127,15),
+                (199,135,23),
+                (199,151,31),
+                (191,159,31),
+                (191,175,47),
+                (183,183,47),
+                (207,207,111),
+            ]
         }
     }
 }
@@ -214,13 +338,27 @@ impl<T> OlcConsoleGameEngine<T> {
         self.set_current_console_font_ex(self.console_handle, FALSE, &mut font_cfi).unwrap();
 
         // Initialize CONSOLE_SCREEN_BUFFER_INFO struct
-        let mut screen_buffer_csbi = CONSOLE_SCREEN_BUFFER_INFO::empty();
+        // let mut screen_buffer_csbi = CONSOLE_SCREEN_BUFFER_INFO::empty();
+
+        // Initialize CONSOLE_SCREEN_BUFFER_INFOEX struct
+        let mut screen_bufferex_csbi = CONSOLE_SCREEN_BUFFER_INFOEX::empty();
+        screen_bufferex_csbi.cbSize = size_of::<CONSOLE_SCREEN_BUFFER_INFOEX>().try_into().unwrap();
 
         // Retrive information about supplied console handle
-        self.get_console_screen_buffer_info(self.console_handle, &mut screen_buffer_csbi).unwrap();
+        // self.get_console_screen_buffer_info(self.console_handle, &mut screen_buffer_csbi).unwrap();
+
+        // Retrive information about supplied console handle(ex)
+        self.get_console_screen_buffer_info_ex(self.console_handle, &mut screen_bufferex_csbi).unwrap();
+        let default_color = DefaultPalette::new();
+        screen_bufferex_csbi.rgb(default_color);
+
+        self.set_console_screen_buffer_info_ex(self.console_handle, &mut screen_bufferex_csbi).unwrap();
 
         // Check for valid window size
-        self.validate_window_size(&screen_buffer_csbi).unwrap();
+        // self.validate_window_size(&screen_buffer_csbi).unwrap();
+
+        // Check for valid window size(ex)
+        self.validate_window_size_ex(&screen_bufferex_csbi).unwrap();
 
         // Set physical console window size
         self.rect_window = SMALL_RECT {
@@ -257,6 +395,16 @@ impl<T> OlcConsoleGameEngine<T> {
         }
     }
 
+    fn get_console_screen_buffer_info_ex(&self, console_handle: HANDLE, buffer_struct: PCONSOLE_SCREEN_BUFFER_INFOEX) -> Result<i32, &'static str> {
+        let screen_buffer_info_ex = unsafe { GetConsoleScreenBufferInfoEx(console_handle, buffer_struct) };
+
+        if screen_buffer_info_ex != 0 {
+            return Ok(screen_buffer_info_ex)
+        } else {
+            return Err("Get console screen buffer info ex function failed")
+        }
+    }
+
     fn set_console_active_screen_buffer(&self, console_handle: HANDLE) -> Result<i32, &'static str> {
         let active_buffer = unsafe { SetConsoleActiveScreenBuffer(console_handle) };
 
@@ -264,6 +412,16 @@ impl<T> OlcConsoleGameEngine<T> {
             return Ok(active_buffer)
         } else {
             return Err("Set console active screen buffer function failed")
+        }
+    }
+
+    fn set_console_screen_buffer_info_ex(&self, console_handle: HANDLE, buffer: &mut CONSOLE_SCREEN_BUFFER_INFOEX) -> Result<i32, &'static str> {
+        let screen_buffer_info_ex = unsafe { SetConsoleScreenBufferInfoEx(console_handle, buffer) };
+
+        if screen_buffer_info_ex != 0 {
+            Ok(screen_buffer_info_ex)
+        } else {
+            Err("SetConsoleScreenBufferInfoEx function has failed")
         }
     }
 
@@ -313,6 +471,16 @@ impl<T> OlcConsoleGameEngine<T> {
     }
 
     fn validate_window_size(&self, buffer_struct: &CONSOLE_SCREEN_BUFFER_INFO) -> Result<&'static str, &'static str> {
+        if self.screen_height > buffer_struct.dwMaximumWindowSize.Y {
+            return Err("Screen height or Font height is too big")
+        } else if self.screen_width > buffer_struct.dwMaximumWindowSize.X {
+            return Err("Screen width or Font Width is too big")
+        } else {
+            Ok("Window size validation successful")
+        }
+    }
+
+    fn validate_window_size_ex(&self, buffer_struct: &CONSOLE_SCREEN_BUFFER_INFOEX) -> Result<&'static str, &'static str> {
         if self.screen_height > buffer_struct.dwMaximumWindowSize.Y {
             return Err("Screen height or Font height is too big")
         } else if self.screen_width > buffer_struct.dwMaximumWindowSize.X {
