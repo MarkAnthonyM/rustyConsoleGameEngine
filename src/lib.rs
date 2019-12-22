@@ -231,7 +231,7 @@ pub struct OlcConsoleGameEngine<T> {
 
     game_state_active: bool,
 
-    pub game_struct: Vec<T>,
+    pub game_struct: T,
 
     pub keys: [KeyState; 256],
 
@@ -270,7 +270,7 @@ impl<T> OlcConsoleGameEngine<T> {
             console_handle_in: input_handle,
             enable_sound: true,
             game_state_active: game_state_active,
-            game_struct: vec![game_data],
+            game_struct: game_data,
             keys: [KeyState::new(); 256],
             key_state_new: [0; 256],
             key_state_old: [0; 256],
