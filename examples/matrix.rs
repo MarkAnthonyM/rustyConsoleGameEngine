@@ -1,5 +1,6 @@
 extern crate rustyConsoleGameEngine;
 
+use rand::distributions::Alphanumeric;
 use rustyConsoleGameEngine::{ OlcConsoleGameEngine, Color };
 use rand::prelude::*;
 use std::thread;
@@ -28,15 +29,21 @@ struct Matrix {
 
 fn prepare_streamer(streamer: &mut StringStreamer) {
     let mut rng = thread_rng();
-    let distr = rand::distributions::Uniform::new_inclusive(0, 128);
+    let ran_num = rng.gen_range(0, 128);
+    let ran_speed = rng.gen_range(10, 50);
 
-    // let ran_str: String = (0..10).map(|_| rand::random::<u8>() as char).collect();
-    // let char_bytes = ran_char.bytes();
+    streamer.text = String::new();
+    streamer.text += &random_char(rng);
 
-    streamer.column = rng.sample(distr);
+    streamer.column = ran_num;
     streamer.row = 0.0;
-    streamer.speed = (rng.sample(distr) % 40 + 5) as f64;
-    streamer.text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".to_string();
+    streamer.speed = ran_speed as f64;
+}
+
+fn random_char(mut rng: ThreadRng) -> String {
+    let ran_char = rng.sample_iter(Alphanumeric).take(rng.gen_range(5, 20)).collect();
+
+    ran_char
 }
 
 fn main() {
@@ -75,18 +82,18 @@ fn main() {
     let closure: Box<dyn FnMut(&mut OlcConsoleGameEngine<Matrix>)> = Box::new(move |data| {
         data.fill(0, 0, data.screen_width as usize, data.screen_height as usize, ' ' as i16, 0);
 
-        for i in 0..data.game_struct[0].streamer.len() {
-            let formatted_string = format!("{}", data.game_struct[0].streamer[i].text);
+        for i in 0..data.game_struct.streamer.len() {
+            let formatted_string = format!("{}", data.game_struct.streamer[i].text);
             let string_arr = formatted_string.as_bytes();
 
-            data.game_struct[0].streamer[i].row += data.game_struct[0].streamer[i].speed * data.time_delta;
+            data.game_struct.streamer[i].row += data.game_struct.streamer[i].speed * data.time_delta;
 
             for z in 0..formatted_string.len() {
-                let row = data.game_struct[0].streamer[i].row;
+                let row = data.game_struct.streamer[i].row;
                 let off_set_index = ((z as f64 - row) % formatted_string.len() as f64).abs();
                 let mut color;
 
-                if data.game_struct[0].streamer[i].speed < 15.0 {
+                if data.game_struct.streamer[i].speed < 15.0 {
                     color = Color::fg_dark_green;
                 } else {
                     color = Color::fg_green;
@@ -98,11 +105,11 @@ fn main() {
                     color = Color::fg_dark_grey;
                 }
 
-                data.draw(data.game_struct[0].streamer[i].column, (row - z as f64) as usize, string_arr[off_set_index as usize] as i16, color as i16);
+                data.draw(data.game_struct.streamer[i].column, (row - z as f64) as usize, string_arr[off_set_index as usize] as i16, color as i16);
             }
 
-            if data.game_struct[0].streamer[i].row - formatted_string.len() as f64 >= data.screen_height as f64 {
-                prepare_streamer(&mut data.game_struct[0].streamer[i]);
+            if data.game_struct.streamer[i].row - formatted_string.len() as f64 >= data.screen_height as f64 {
+                prepare_streamer(&mut data.game_struct.streamer[i]);
             }
         }
     });
