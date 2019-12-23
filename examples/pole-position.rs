@@ -1,7 +1,7 @@
 extern crate rustyConsoleGameEngine;
 
-use rustyConsoleGameEngine::OlcConsoleGameEngine;
-
+use rand::prelude::*;
+use rustyConsoleGameEngine::{ Color, OlcConsoleGameEngine };
 use std::thread;
 
 struct PolePole {
@@ -11,15 +11,43 @@ struct PolePole {
     car_speed: f64,
     current_laptime: f64,
     curvature: f64,
+    stars: Vec<Star>,
     track: Vec<(f64, f64)>,
     track_curvature: f64,
     track_distance: f64,
     player_curvature: f64,
 }
 
+struct Star {
+    column: usize,
+    row: f64,
+    speed: f64,
+    star: String,
+}
+
+impl Star {
+    fn new() -> Self {
+        Self {
+            column: 0,
+            row: 0.0,
+            speed: 0.0,
+            star: ".".to_string(),
+        }
+    }
+}
+
+fn prepare_star(star: &mut Star) {
+    let mut rng = rand::thread_rng();
+    let ran_column = rng.gen_range(0, 150);
+    let ran_speed = rng.gen_range(5, 40);
+
+    star.column = ran_column as usize;
+    star.row = 0.0;
+    star.speed = ran_speed as f64;
+}
+
 fn main() {
     let mut init = true;
-
 
     let mut game_data = PolePole {
         best_laptime: 0.0,
@@ -28,11 +56,22 @@ fn main() {
         car_speed: 0.0,
         current_laptime: 0.0,
         curvature: 0.0,
+        stars: Vec::new(),
         track: Vec::new(),
         track_curvature: 0.0,
         track_distance: 0.0,
         player_curvature: 0.0,
     };
+
+    let max_stars = 100;
+
+    for n in 0..max_stars {
+        let mut star = Star::new();
+
+        prepare_star(&mut star);
+
+        game_data.stars.push(star);
+    }
 
     game_data.track.push((0.0, 10.0)); // Short section for start/finish line
     game_data.track.push((0.0, 200.0));
@@ -52,57 +91,57 @@ fn main() {
 
     let closure: Box<dyn FnMut(&mut OlcConsoleGameEngine<PolePole>)> = Box::new(move |data| {
         if data.keys[0x26].held {
-            data.game_struct[0].car_speed += 2.0 * data.time_delta;
+            data.game_struct.car_speed += 2.0 * data.time_delta;
         } else {
-            data.game_struct[0].car_speed -= 1.0 * data.time_delta;
+            data.game_struct.car_speed -= 1.0 * data.time_delta;
         }
 
         if data.keys[0x25].held {
-            data.game_struct[0].player_curvature -= 0.7 * data.time_delta;
+            data.game_struct.player_curvature -= 0.7 * data.time_delta;
         }
 
         if data.keys[0x27].held {
-            data.game_struct[0].player_curvature += 0.7 * data.time_delta;
+            data.game_struct.player_curvature += 0.7 * data.time_delta;
         }
 
-        if data.game_struct[0].player_curvature - data.game_struct[0].track_curvature >= 0.8 {
-            data.game_struct[0].car_speed -= 5.0 * data.time_delta;
+        if data.game_struct.player_curvature - data.game_struct.track_curvature >= 0.8 {
+            data.game_struct.car_speed -= 5.0 * data.time_delta;
         }
 
         // Clamp speed
-        if data.game_struct[0].car_speed < 0.0 { data.game_struct[0].car_speed = 0.0 };
-        if data.game_struct[0].car_speed > 1.0 { data.game_struct[0].car_speed = 1.0 };
+        if data.game_struct.car_speed < 0.0 { data.game_struct.car_speed = 0.0 };
+        if data.game_struct.car_speed > 1.0 { data.game_struct.car_speed = 1.0 };
 
         // Move car along track according to car speed
-        data.game_struct[0].car_distance += (70.0 * data.game_struct[0].car_speed) * data.time_delta;
+        data.game_struct.car_distance += (70.0 * data.game_struct.car_speed) * data.time_delta;
 
         // Get point on track
         let mut off_set = 0.0;
         let mut track_section = 0;
 
-        data.game_struct[0].current_laptime += data.time_delta;
+        data.game_struct.current_laptime += data.time_delta;
 
-        if data.game_struct[0].car_distance >= data.game_struct[0].track_distance {
-            data.game_struct[0].car_distance -= data.game_struct[0].track_distance;
-            if data.game_struct[0].best_laptime < data.game_struct[0].current_laptime {
-                data.game_struct[0].best_laptime = data.game_struct[0].current_laptime;
+        if data.game_struct.car_distance >= data.game_struct.track_distance {
+            data.game_struct.car_distance -= data.game_struct.track_distance;
+            if data.game_struct.best_laptime < data.game_struct.current_laptime {
+                data.game_struct.best_laptime = data.game_struct.current_laptime;
             }
-            data.game_struct[0].current_laptime = 0.0;
+            data.game_struct.current_laptime = 0.0;
         }
 
         // Find position on track (could optimise)
-        while track_section < data.game_struct[0].track.len() && off_set <= data.game_struct[0].car_distance {
-            off_set += data.game_struct[0].track[track_section].1;
+        while track_section < data.game_struct.track.len() && off_set <= data.game_struct.car_distance {
+            off_set += data.game_struct.track[track_section].1;
             track_section += 1;
         }
 
-        let target_curvature = data.game_struct[0].track[track_section - 1].0;
+        let target_curvature = data.game_struct.track[track_section - 1].0;
 
-        let track_curvature_diff = (target_curvature - data.game_struct[0].curvature) * data.time_delta * data.game_struct[0].car_speed;
+        let track_curvature_diff = (target_curvature - data.game_struct.curvature) * data.time_delta * data.game_struct.car_speed;
 
-        data.game_struct[0].curvature += track_curvature_diff;
+        data.game_struct.curvature += track_curvature_diff;
 
-        data.game_struct[0].track_curvature += data.game_struct[0].curvature * data.time_delta * data.game_struct[0].car_speed;
+        data.game_struct.track_curvature += data.game_struct.curvature * data.time_delta * data.game_struct.car_speed;
 
         if init {
             data.fill(0, 0, data.screen_width as usize, data.screen_height as usize, ' ' as i16, 0);
@@ -111,24 +150,33 @@ fn main() {
             }
             init = false;
         } else {
-            // for y in 1..(data.screen_height / 2) as usize {
-            //     for x in 0..data.screen_width as usize {
-            //
-            //         let pixel = data.text_buffer[y * data.screen_width as usize + x].Attributes;
-            //
-            //         let element = y * data.screen_width as usize + x;
-            //         println!("{}", pixel);
-            //         thread::sleep_ms(10);
-            //
-            //         if pixel == 0 {
-            //             data.text_buffer[element - data.screen_width as usize].Attributes = 0;
-            //         } else {
-            //             // println!("{}", pixel);
-            //             // thread::sleep_ms(1);
-            //             data.text_buffer[element - data.screen_width as usize].Attributes = pixel - 16;
-            //         }
-            //     }
-            // }
+            data.fill(0, 0, data.screen_width as usize, 10, ' ' as i16, 0);
+
+            for i in 0..data.game_struct.stars.len() {
+                let formatted_string = format!("{}", data.game_struct.stars[i].star);
+                let string_array = formatted_string.as_bytes();
+
+                data.game_struct.stars[i].row += (data.game_struct.stars[i].speed * data.game_struct.car_speed) * data.time_delta;
+
+                for s in 0..string_array.len() {
+                    let row = data.game_struct.stars[i].row - s as f64;
+                    let column = data.game_struct.stars[i].column;
+
+                    let color;
+
+                    if data.game_struct.stars[i].speed < 8.0 {
+                        color = Color::fg_dark_grey;
+                    } else {
+                        color = Color::fg_white;
+                    }
+
+                    data.draw(column, row as usize, string_array[s] as i16, color as i16);
+                }
+
+                if data.game_struct.stars[i].row > 9.0 {
+                    prepare_star(&mut data.game_struct.stars[i]);
+                }
+            }
 
             for y in 0..data.screen_height / 2 {
                 for x in 0..data.screen_width {
@@ -148,18 +196,9 @@ fn main() {
                         }
                     }
 
-                    // Draw stars
-                    // if y <= 9 {
-                    //     let element = y * data.screen_width + x;
-                    //
-                    //     let pixel = '.' as i16;
-                    //
-                    //     data.draw(x as usize, y as usize, pixel, 0x000F);
-                    // }
-
                     let perspective = y as f64 / (data.screen_height as f64 / 2.0);
 
-                    let middle_point = 0.5 + data.game_struct[0].curvature * f64::powf(1.0 - perspective, 3.0);
+                    let middle_point = 0.5 + data.game_struct.curvature * f64::powf(1.0 - perspective, 3.0);
                     let mut road_width = 0.1 + perspective * 0.8;
                     let clip_width = road_width * 0.15;
 
@@ -173,9 +212,9 @@ fn main() {
 
                     let row = data.screen_height / 2 + y;
 
-                    let grass_calc = 20.0 * f64::powf(1.0 - perspective, 3.0) + data.game_struct[0].car_distance * 0.1;
+                    let grass_calc = 20.0 * f64::powf(1.0 - perspective, 3.0) + data.game_struct.car_distance * 0.1;
 
-                    let clip_calc = 40.0 * f64::powf(1.0 - perspective, 2.0) + data.game_struct[0].car_distance;
+                    let clip_calc = 40.0 * f64::powf(1.0 - perspective, 2.0) + data.game_struct.car_distance;
 
                     let grass_color;
 
@@ -224,8 +263,8 @@ fn main() {
             }
 
             // Draw car
-            data.game_struct[0].car_position = data.game_struct[0].player_curvature - data.game_struct[0].track_curvature;
-            let mut car_position = data.game_struct[0].car_position;
+            data.game_struct.car_position = data.game_struct.player_curvature - data.game_struct.track_curvature;
+            let mut car_position = data.game_struct.car_position;
 
             car_position = data.screen_width as f64 / 2.0 + ((data.screen_width as f64 * car_position) / 2.0) - 7.0;
 
@@ -238,15 +277,15 @@ fn main() {
             data.draw_string_alpha(car_position as usize, 46, "|||  ####  |||   ", 0x000F);
 
             //Debug information
-            data.draw_string(0, 0, format!("Distance: {}", data.game_struct[0].car_distance), 0x000F);
-            data.draw_string(0, 1, format!("Target Curve: {}", data.game_struct[0].curvature), 0x000F);
-            data.draw_string(0, 2, format!("Player Curve: {}", data.game_struct[0].player_curvature), 0x000F);
-            data.draw_string(0, 3, format!("Player Speed: {}", data.game_struct[0].car_speed), 0x000F);
-            data.draw_string(0, 4, format!("Track Curve: {}", data.game_struct[0].track_curvature), 0x000F);
+            data.draw_string(0, 0, format!("Distance: {}", data.game_struct.car_distance), 0x000F);
+            data.draw_string(0, 1, format!("Target Curve: {}", data.game_struct.curvature), 0x000F);
+            data.draw_string(0, 2, format!("Player Curve: {}", data.game_struct.player_curvature), 0x000F);
+            data.draw_string(0, 3, format!("Player Speed: {}", data.game_struct.car_speed), 0x000F);
+            data.draw_string(0, 4, format!("Track Curve: {}", data.game_struct.track_curvature), 0x000F);
 
-            data.draw_string(0, 5, format!("Current LapTime: {:.2}", data.game_struct[0].current_laptime), 0x000F);
+            data.draw_string(0, 5, format!("Current LapTime: {:.2}", data.game_struct.current_laptime), 0x000F);
 
-            data.draw_string(0, 6, format!("Best LapTime: {:.2}", data.game_struct[0].current_laptime), 0x000F);
+            data.draw_string(0, 6, format!("Best LapTime: {:.2}", data.game_struct.current_laptime), 0x000F);
         }
     });
 
