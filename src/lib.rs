@@ -56,7 +56,7 @@ trait Empty {
 }
 
 trait Palette {
-    fn rgb(&mut self, rgb_values: DefaultPalette);
+    fn rgb(&mut self, rgb_values: ColorPalette);
 }
 
 impl Empty for CHAR_INFO {
@@ -134,10 +134,40 @@ impl Empty for SMALL_RECT {
     }
 }
 
+// Palette structure
+pub struct ColorPalette {
+    default_palette: Vec<(u8, u8, u8)>,
+}
+
+impl ColorPalette {
+    pub fn new() -> Self {
+        ColorPalette {
+            default_palette: vec![
+                (0, 0, 0),
+                (0, 128, 0),
+                (0, 128, 0),
+                (0, 128, 128),
+                (128, 0, 0),
+                (128, 0, 128),
+                (128, 128, 0),
+                (192, 192, 192),
+                (128, 128, 128),
+                (0, 0, 255),
+                (0, 255, 0),
+                (0, 255, 255),
+                (255, 0, 0),
+                (255, 0, 255),
+                (255, 255, 0),
+                (255, 255, 255),
+            ],
+        }
+    }
+}
+
 impl Palette for CONSOLE_SCREEN_BUFFER_INFOEX {
-    fn rgb(&mut self, rgb_values: DefaultPalette) {
-        for i in 0..rgb_values.palette.len() {
-            let color_ref = unsafe { RGB(rgb_values.palette[i].0, rgb_values.palette[i].1, rgb_values.palette[i].2) };
+    fn rgb(&mut self, rgb_values: ColorPalette) {
+        for i in 0..rgb_values.default_palette.len() {
+            let color_ref = unsafe { RGB(rgb_values.default_palette[i].0, rgb_values.default_palette[i].1, rgb_values.default_palette[i].2) };
 
             self.ColorTable[i] = color_ref;
         }
@@ -161,71 +191,15 @@ impl KeyState {
     }
 }
 
-// pub struct CustomPalette {
-//     palette: Vec<(u8, u8, u8)>,
-// }
-//
-// impl CustomPalette {
-//     pub fn new(palette: Vec<(u8, u8, u8)>) -> Self {
-//         CustomPalette {
-//             palette,
-//         }
-//     }
-// }
-
-struct DefaultPalette {
-    palette: Vec<(u8, u8, u8)>,
-    sunset_palette: Vec<(u8, u8, u8)>,
-}
-
-impl DefaultPalette {
-    fn new() -> Self {
-        DefaultPalette {
-            palette: vec![
-                (0, 0, 0),
-                (0, 128, 0),
-                (0, 128, 0),
-                (0, 128, 128),
-                (128, 0, 0),
-                (128, 0, 128),
-                (128, 128, 0),
-                (192, 192, 192),
-                (128, 128, 128),
-                (0, 0, 255),
-                (0, 255, 0),
-                (0, 255, 255),
-                (255, 0, 0),
-                (255, 0, 255),
-                (255, 255, 0),
-                (255, 255, 255),
-            ],
-            sunset_palette: vec![
-                (7,7,7),
-                (71,15,7),
-                (103,31,7),
-                (143,39,7),
-                (175,63,7),
-                (199,71,7),
-                (233,87,7),
-                (215,95,7),
-                (207,111,15),
-                (207,127,15),
-                (199,135,23),
-                (199,151,31),
-                (191,159,31),
-                (191,175,47),
-                (183,183,47),
-                (207,207,111),
-            ]
-        }
-    }
-}
-
 pub struct OlcConsoleGameEngine<T> {
     app_name: String,
 
+    buffer_info: CONSOLE_SCREEN_BUFFER_INFOEX,
+
     console_handle: HANDLE,
     console_handle_in: HANDLE,
+
+    custom_palette: Option<Vec<(u8, u8, u8)>>,
 
     enable_sound: bool,
 
@@ -266,8 +240,10 @@ impl<T> OlcConsoleGameEngine<T> {
 
         OlcConsoleGameEngine {
             app_name: application_name.to_string(),
+            buffer_info: CONSOLE_SCREEN_BUFFER_INFOEX::empty(),
             console_handle: output_handle,
             console_handle_in: input_handle,
+            custom_palette: None,
             enable_sound: true,
             game_state_active: game_state_active,
             game_struct: game_data,
@@ -285,7 +261,7 @@ impl<T> OlcConsoleGameEngine<T> {
         }
     }
 
-    pub fn consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16) {
+    pub fn consturct_console(&mut self, width: i16, height: i16, font_w: i16, font_h: i16, custom_palette: Option<Vec<(u8, u8, u8)>>) {
         // Check for valid handle
         if self.console_handle == INVALID_HANDLE_VALUE {
             println!("failed to get valid console handle");
@@ -294,6 +270,7 @@ impl<T> OlcConsoleGameEngine<T> {
 
         self.screen_width = width;
         self.screen_height = height;
+        self.custom_palette = custom_palette;
 
         //Set initial rect_window field
         self.rect_window = SMALL_RECT {
@@ -343,13 +320,14 @@ impl<T> OlcConsoleGameEngine<T> {
         // Initialize CONSOLE_SCREEN_BUFFER_INFOEX struct
         let mut screen_bufferex_csbi = CONSOLE_SCREEN_BUFFER_INFOEX::empty();
         screen_bufferex_csbi.cbSize = size_of::<CONSOLE_SCREEN_BUFFER_INFOEX>().try_into().unwrap();
+        self.buffer_info = screen_bufferex_csbi;
 
         // Retrive information about supplied console handle
         // self.get_console_screen_buffer_info(self.console_handle, &mut screen_buffer_csbi).unwrap();
 
         // Retrive information about supplied console handle(ex)
         self.get_console_screen_buffer_info_ex(self.console_handle, &mut screen_bufferex_csbi).unwrap();
-        let default_color = DefaultPalette::new();
+        let default_color = ColorPalette::new();
         screen_bufferex_csbi.rgb(default_color);
 
         self.set_console_screen_buffer_info_ex(self.console_handle, &mut screen_bufferex_csbi).unwrap();
@@ -402,6 +380,32 @@ impl<T> OlcConsoleGameEngine<T> {
             return Ok(screen_buffer_info_ex)
         } else {
             return Err("Get console screen buffer info ex function failed")
+        }
+    }
+
+    // Load custom color palette
+    pub fn load_custom_palette(&mut self) {
+        let mut buffer_info = self.buffer_info;
+
+        if let Some(rgb) = self.custom_palette.take() {
+            self.get_console_screen_buffer_info_ex(self.console_handle, &mut buffer_info).unwrap();
+
+            for i in 0..rgb.len() {
+                let color_ref = unsafe { RGB(rgb[i].0, rgb[i].1, rgb[i].2) };
+
+                buffer_info.ColorTable[i] = color_ref;
+            }
+
+            self.set_console_screen_buffer_info_ex(self.console_handle, &mut buffer_info).unwrap();
+
+            self.rect_window = SMALL_RECT {
+                Left: 0,
+                Top: 0,
+                Right: self.screen_width - 1,
+                Bottom: self.screen_height - 1,
+            };
+
+            self.set_console_window_info(self.console_handle, TRUE, &self.rect_window).unwrap();
         }
     }
 
