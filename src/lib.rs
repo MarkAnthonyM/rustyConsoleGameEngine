@@ -314,16 +314,10 @@ impl<T> OlcConsoleGameEngine<T> {
         // Set extended information about current console font
         self.set_current_console_font_ex(self.console_handle, FALSE, &mut font_cfi).unwrap();
 
-        // Initialize CONSOLE_SCREEN_BUFFER_INFO struct
-        // let mut screen_buffer_csbi = CONSOLE_SCREEN_BUFFER_INFO::empty();
-
         // Initialize CONSOLE_SCREEN_BUFFER_INFOEX struct
         let mut screen_bufferex_csbi = CONSOLE_SCREEN_BUFFER_INFOEX::empty();
         screen_bufferex_csbi.cbSize = size_of::<CONSOLE_SCREEN_BUFFER_INFOEX>().try_into().unwrap();
         self.buffer_info = screen_bufferex_csbi;
-
-        // Retrive information about supplied console handle
-        // self.get_console_screen_buffer_info(self.console_handle, &mut screen_buffer_csbi).unwrap();
 
         // Retrive information about supplied console handle(ex)
         self.get_console_screen_buffer_info_ex(self.console_handle, &mut screen_bufferex_csbi).unwrap();
@@ -362,16 +356,6 @@ impl<T> OlcConsoleGameEngine<T> {
     // fn _enable_sound() {
     //
     // }
-
-    fn get_console_screen_buffer_info(&self, console_handle: HANDLE, buffer_struct: PCONSOLE_SCREEN_BUFFER_INFO) -> Result<i32, &'static str> {
-        let screen_buffer_info = unsafe { GetConsoleScreenBufferInfo(console_handle, buffer_struct) };
-
-        if screen_buffer_info != 0 {
-            return Ok(screen_buffer_info)
-        } else {
-            return Err("Get console active screen buffer function failed")
-        }
-    }
 
     fn get_console_screen_buffer_info_ex(&self, console_handle: HANDLE, buffer_struct: PCONSOLE_SCREEN_BUFFER_INFOEX) -> Result<i32, &'static str> {
         let screen_buffer_info_ex = unsafe { GetConsoleScreenBufferInfoEx(console_handle, buffer_struct) };
