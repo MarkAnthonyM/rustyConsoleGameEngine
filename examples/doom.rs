@@ -25,8 +25,29 @@ fn main() {
 
     let game_data = Doom {};
 
+    let rgb_palette = vec![
+        (7,7,7),
+        (71,15,7),
+        (103,31,7),
+        (143,39,7),
+        (175,63,7),
+        (199,71,7),
+        (233,87,7),
+        (215,95,7),
+        (207,111,15),
+        (207,127,15),
+        (199,135,23),
+        (199,151,31),
+        (191,159,31),
+        (191,175,47),
+        (183,183,47),
+        (207,207,111),
+    ];
+
     let test_clousre: Box<dyn FnMut(&mut OlcConsoleGameEngine<Doom>)> = Box::new(move |data| {
         if init {
+            data.load_palette(&rgb_palette);
+
             for x in 0..data.screen_width as usize {
                 for y in 0..data.screen_height as usize {
                     if y == (data.screen_height - 1) as usize {

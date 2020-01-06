@@ -49,6 +49,25 @@ fn prepare_star(star: &mut Star) {
 fn main() {
     let mut init = true;
 
+    let rgb_palette = Some(vec![
+        (7,7,7),
+        (71,15,7),
+        (103,31,7),
+        (143,39,7),
+        (175,63,7),
+        (199,71,7),
+        (233,87,7),
+        (215,95,7),
+        (207,111,15),
+        (207,127,15),
+        (199,135,23),
+        (199,151,31),
+        (191,159,31),
+        (191,175,47),
+        (183,183,47),
+        (207,207,111),
+    ]);
+
     let mut game_data = PolePole {
         best_laptime: 0.0,
         car_distance: 0.0,
@@ -148,6 +167,7 @@ fn main() {
             for x in 0..data.screen_width as usize {
                 data.draw(x, ((data.screen_height / 2) - 1) as usize, ' ' as i16, 0x00F0);
             }
+            data.load_custom_palette();
             init = false;
         } else {
             data.fill(0, 0, data.screen_width as usize, 10, ' ' as i16, 0);
@@ -291,7 +311,7 @@ fn main() {
 
     let mut demo = OlcConsoleGameEngine::new(closure, game_data);
 
-    demo.consturct_console(150, 50, 6, 12);
+    demo.consturct_console(150, 50, 6, 12, rgb_palette);
 
     demo.start();
 }

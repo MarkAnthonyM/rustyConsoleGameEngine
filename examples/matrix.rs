@@ -1,9 +1,8 @@
 extern crate rustyConsoleGameEngine;
 
 use rand::distributions::Alphanumeric;
-use rustyConsoleGameEngine::{ OlcConsoleGameEngine, Color };
+use rustyConsoleGameEngine::{ OlcConsoleGameEngine, Color, };
 use rand::prelude::*;
-use std::thread;
 
 struct StringStreamer {
     column: usize,
@@ -47,7 +46,7 @@ fn random_char(mut rng: ThreadRng) -> String {
 }
 
 fn main() {
-    let rgb_palette = vec![
+    let color_palette = Some(vec![
         (7,7,7),
         (71,15,7),
         (103,31,7),
@@ -64,7 +63,7 @@ fn main() {
         (191,175,47),
         (183,183,47),
         (207,207,111),
-    ];
+    ]);
 
     let mut matrix = Matrix {
         streamer: Vec::new(),
@@ -79,8 +78,12 @@ fn main() {
         matrix.streamer.push(s);
     }
 
-    let closure: Box<dyn FnMut(&mut OlcConsoleGameEngine<Matrix>)> = Box::new(move |data| {
+    let mut init = true;
+
+    let closure: Box<dyn FnMut(&mut OlcConsoleGameEngine<Matrix>)> = Box::new(|data| {
         data.fill(0, 0, data.screen_width as usize, data.screen_height as usize, ' ' as i16, 0);
+
+        data.load_custom_palette();
 
         for i in 0..data.game_struct.streamer.len() {
             let formatted_string = format!("{}", data.game_struct.streamer[i].text);
@@ -116,7 +119,7 @@ fn main() {
 
     let mut demo = OlcConsoleGameEngine::new(closure, matrix);
 
-    demo.consturct_console(128, 50, 12, 12);
+    demo.consturct_console(128, 50, 12, 12, None);
 
     demo.start();
 }
